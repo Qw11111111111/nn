@@ -1,6 +1,14 @@
 import numpy as np
-from loss_functions.main import *
+import matplotlib.pyplot as plt
+import pandas as pd
 
+def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
+    if X and w:
+        pred = np.dot(X, w)
+    if mode == "forward":
+        return np.sum([(pred[i] - Y[i]) ** 2 for i in range(len(Y))]) / len(Y)
+    else:
+        return 2 * (pred[0] - Y[0])
 class RegressionModel():
     """A Linear Regression model for multi dimensional linear regression tasks. Does not implement Ridge yet and has room to improve"""
     def __init__(self, lr: float, stop: float = 1e-4, input_size: int = 1, bias: bool = True, add_randomness: bool = False, momentum: bool = True, beta: int = 0.01, rng: np.random.RandomState = None, nonlinear: bool = False, lambda_val: float = 0, SGD: bool = False, batch_size: int = None) -> None:
@@ -232,3 +240,82 @@ class shallow_net():
         """returns the loss"""
         pred = self.forward(X)
         return self.loss(pred=pred, Y=y_true)
+
+def loss(X, w, Y, lambda_value: float = 0, func = lambda x: x) ->  float:
+    """MSE Loss function, takes a np.array or float PRED and a np.array or float Y and returns the gradient of the MSE loss"""
+    if np.isscalar(X):
+        X = np.array([X])
+    if np.isscalar(Y):
+        Y = np.array([Y])
+    return - np.dot(np.transpose(X), (Y - np.dot(X, func(w)))) + 2 * lambda_value * func(w)
+
+def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
+    """takes a np.array X, a vector y and shuffle
+    fits a Linear model to the given data and outputs some relevant data"""
+    EPOCHS = 2000
+    STOP = 1e-4
+    TRAIN_SPLIT = int(0.8 * len(X))
+    LEARNING_RATE = 1e-2
+
+    model = RegressionModel(lr=LEARNING_RATE, stop=STOP, input_size=len(X[0]), add_randomness=False, bias=False, momentum=True, beta=0.5, SGD=True, batch_size=10)
+    model_2 = shallow_net(input_dim=X.shape[1], neurons=20, fit_intercept=False, lr=2e-3)
+
+    # plots the predictions of the model prior to training
+    plt.plot(np.linspace(0, len(X), len(X)), y)
+    plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
+    plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
+    plt.legend(["Real data", "Predicted Data", "pred shallow"])
+    plt.show()
+    
+    #training and testing of the model on the dataset. Batching of the data is possible
+    print(f"Weight before training: {model.weights} | Bias before training: {model.bias}")
+
+    losses = []
+    for i in range(EPOCHS):
+        if shuffle:
+            rand_perm = np.random.permutation(len(X))
+            X, y = np.array([X[i] for i in rand_perm]), np.array([y[i] for i in rand_perm])
+        model_2.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
+        model.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
+        losses.append(model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:]))
+        if  i % 10 == 0:
+            #print(f"Epoch: {i} | train_loss: {np.mean(loss(X[:TRAIN_SPLIT], model.weights, y[:TRAIN_SPLIT])):.3f} | test_loss: {np.mean(loss(X[TRAIN_SPLIT:], model.weights, y[TRAIN_SPLIT:])):.3f}")
+            print(f"Epoch: {i} | train_loss: {model_2.get_loss(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])} | test_loss: {model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:])}")
+    print(f"Weight after training: {model.weights} | Bias after training: {model.bias}")
+    
+
+    # plots the loss curve
+    plt.plot(np.arange(len(losses)), losses)
+    plt.xlabel("Number of epochs")
+    plt.ylabel("MSE Loss")
+    plt.title("Learning Curve")
+    plt.grid(True)
+    plt.show()
+
+
+    # plots the predictions of the model after training
+    plt.plot(np.linspace(0, len(X), len(X)), y)
+    plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
+    plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
+    plt.legend(["Real data", "Predicted Data", "pred shallow"])
+    plt.show()
+
+if __name__ == "__main__":
+    rng = np.random.RandomState(42)
+    shuffle = True
+    custom_data = False
+    if not custom_data:
+        data = pd.read_csv("project_1a/data/train.csv")
+        y = data["y"].to_numpy()
+        data = data.drop(columns="y")
+        X = data.to_numpy()
+    else:
+        data = np.linspace(0, 200, 200)
+        x_2_data = np.linspace(0, 20, 200)
+        x_3_data = np.linspace(200, 1000, 200)
+        y = np.linspace(0, 50, 200)
+        X = np.array([[data[i], x_2_data[i], x_3_data[i]] for i in range(len(data))])
+    
+    print(data[:5])
+   
+    main(X, y, shuffle)
