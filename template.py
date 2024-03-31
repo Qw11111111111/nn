@@ -9,6 +9,7 @@ def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarra
         return np.sum([(pred[i] - Y[i]) ** 2 for i in range(len(Y))]) / len(Y)
     else:
         return 2 * (pred[0] - Y[0])
+
 class RegressionModel():
     """A Linear Regression model for multi dimensional linear regression tasks. Does not implement Ridge yet and has room to improve"""
     def __init__(self, lr: float, stop: float = 1e-4, input_size: int = 1, bias: bool = True, add_randomness: bool = False, momentum: bool = True, beta: int = 0.01, rng: np.random.RandomState = None, nonlinear: bool = False, lambda_val: float = 0, SGD: bool = False, batch_size: int = None) -> None:
