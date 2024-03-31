@@ -1,39 +1,8 @@
 import numpy as np
 from loss_functions.main import *
 from layers.main import *
+from supers.main import *
 
-class Module():
-
-    def __init__(self, layers: list[Layer], rng: int = None) -> None:
-        self.layers = layers
-        if rng:
-            self.rng = np.random.RandomState(rng)
-        for layer in self.layers:
-            layer.initialize()
-
-    def forward(self, x: float | np.ndarray) -> float | np.ndarray:
-        for layer in self.layers:
-            x = layer.forward(x)
-        return x
-
-    def reset(self) -> None:
-        for layer in self.layers:
-            layer.initialize()
-
-    def get_state_dict(self) -> dict:
-        state_dict = {str(layer): {} for layer in self.layers}
-        for layer in self.layers:
-            if str(layer).endswith("no info"):
-                continue
-            state_dict.update({str(layer): layer.get_state()})
-        
-        return state_dict
-
-    def load_state_dict(self, state_dict: dict) -> None:
-        for layer in self.layers:
-            if str(layer).endswith("no info"):
-                continue
-            layer.load_state(state_dict[str(layer)])
 
 class ShallowNet(Module):
     
@@ -41,15 +10,12 @@ class ShallowNet(Module):
         self.neurons = neurons
         self.input_dim = input_dim
         self.ouput_dim = output_dim
-        self.fit_intercept = fit_intercept
-        layers = [LinearLayer(self.input_dim, self.neurons, fit_intercept=self.fit_intercept, rng=rng), ReLU(), LinearLayer(self.neurons, self.ouput_dim, fit_intercept=self.fit_intercept, rng=rng)]
-        super().__init__(layers, rng)
+        layers = [LinearLayer(self.input_dim, self.neurons, fit_intercept=fit_intercept, rng=rng), ReLU(), LinearLayer(self.neurons, self.ouput_dim, fit_intercept=fit_intercept, rng=rng)]
+        super().__init__(layers, rng, fit_intercept=fit_intercept)
     
     def forward(self, x: float | np.ndarray) -> np.ndarray:
         return super().forward(x)
     
-        
-
 class RegressionModel():
     """A Linear Regression model for multi dimensional linear regression tasks. Does not implement Ridge yet and has room to improve"""
     def __init__(self, lr: float, stop: float = 1e-4, input_size: int = 1, bias: bool = True, add_randomness: bool = False, momentum: bool = True, beta: int = 0.01, rng: np.random.RandomState = None, nonlinear: bool = False, lambda_val: float = 0, SGD: bool = False, batch_size: int = None) -> None:
