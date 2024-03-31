@@ -1,5 +1,54 @@
 import numpy as np
 from loss_functions.main import *
+from layers.main import *
+
+class Module():
+
+    def __init__(self, layers: list[Layer], rng: int = None) -> None:
+        self.layers = layers
+        if rng:
+            self.rng = np.random.RandomState(rng)
+        for layer in self.layers:
+            layer.initialize()
+
+    def forward(self, x: float | np.ndarray) -> float | np.ndarray:
+        for layer in self.layers:
+            x = layer.forward(x)
+        return x
+
+    def reset(self) -> None:
+        for layer in self.layers:
+            layer.initialize()
+
+    def get_state_dict(self) -> dict:
+        state_dict = {str(layer): {} for layer in self.layers}
+        for layer in self.layers:
+            if str(layer).endswith("no info"):
+                continue
+            state_dict.update({str(layer): layer.get_state()})
+        
+        return state_dict
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        for layer in self.layers:
+            if str(layer).endswith("no info"):
+                continue
+            layer.load_state(state_dict[str(layer)])
+
+class ShallowNet(Module):
+    
+    def __init__(self, neurons: int, input_dim: int, output_dim: int = 1, fit_intercept: bool = True, rng: int = None) -> None:
+        self.neurons = neurons
+        self.input_dim = input_dim
+        self.ouput_dim = output_dim
+        self.fit_intercept = fit_intercept
+        layers = [LinearLayer(self.input_dim, self.neurons, fit_intercept=self.fit_intercept, rng=rng), ReLU(), LinearLayer(self.neurons, self.ouput_dim, fit_intercept=self.fit_intercept, rng=rng)]
+        super().__init__(layers, rng)
+    
+    def forward(self, x: float | np.ndarray) -> np.ndarray:
+        return super().forward(x)
+    
+        
 
 class RegressionModel():
     """A Linear Regression model for multi dimensional linear regression tasks. Does not implement Ridge yet and has room to improve"""
@@ -84,6 +133,7 @@ class RegressionModel():
             self.weights = np.random.random(self.input_size)
             if self.add_bias:
                 self.bias = np.random.random()
+
 class shallow_net():
     
     def __init__(self, input_dim: int, neurons: int | np.ndarray, output_dim: int = 1,fit_intercept: bool = True, random_state: int | np.random.RandomState = None, activation_func = lambda x: np.array([[num if num > 0 else 0 for num in row] for row in x]), d_activation_func = lambda x: np.array([[1 if num > 0 else 0 for num in row] for row in x]), loss = MSELoss, lr: int = 1e-3, optim: str = "GD") -> None:
