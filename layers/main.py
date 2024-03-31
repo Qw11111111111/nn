@@ -2,7 +2,7 @@ import numpy as np
 
 class Layer():
 
-    def __init__(self, rng: int) -> None:
+    def __init__(self, rng: int = None) -> None:
         if rng:
             self.rng = np.random.RandomState(rng)
         else:
@@ -12,8 +12,8 @@ class Layer():
     def get_grad(self):
         pass
 
-    def forward(self):
-        pass
+    def forward(self, *args):
+        return args
 
     def initialize():
         pass
@@ -24,14 +24,18 @@ class Layer():
     def load_state(self):
         pass
 
+    def __str__(self) -> str:
+        pass
+
 class LinearLayer(Layer):
 
-    def __init__(self, input_dim: int, neurons: int, output_dim: int = 1, fit_intercept: bool = True, rng: int = None) -> None:
+    def __init__(self, input_dim: int, neurons: int, output_dim: int = 1, fit_intercept: bool = True, rng: int = None, position: int = 0) -> None:
         super().__init__(rng)
         self.input_dim = input_dim
         self.neurons = neurons
         self.output_dim = output_dim
         self.fit_intercept = fit_intercept
+        self.pos = position
         self.initialize()
 
     def forward(self, X: np.ndarray | float) -> np.ndarray:
@@ -60,5 +64,29 @@ class LinearLayer(Layer):
 
     def load_state(self, state_dict: dict) -> None:
         self.weights, self.bias = state_dict["weights"], state_dict["bias"]
-
     
+    def __str__(self) -> str:
+        return f"Linear_layer_{self.pos}"
+
+class ReLU(Layer):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self, X: np.ndarray | float) -> np.ndarray | float:
+        if np.isscalar(X):
+            return max(0, X)
+        if len(X.shape) < 2:
+            X = X.reshape((-1, X.shape[0]))
+        return np.array([[np.maximum(0, num) for num in x] for x in X])
+    
+    def get_grad(self, X: float | np.ndarray) -> np.ndarray | int:
+        if np.isscalar(X):
+            return int(X > 0)
+        if len(X.shape) < 2:
+            X = X.reshape((-1, X.shape[0]))
+        return  np.array([[int(num > 0) for num in x] for x in X])
+    
+    def __str__(self) -> str:
+        return f"ReLU_layer, no info"
+
