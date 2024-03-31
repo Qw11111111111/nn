@@ -1,31 +1,5 @@
 import numpy as np
-
-class Layer():
-
-    def __init__(self, rng: int = None) -> None:
-        if rng:
-            self.rng = np.random.RandomState(rng)
-        else:
-            self.rng = None
-        pass
-
-    def get_grad(self):
-        pass
-
-    def forward(self, *args):
-        return args
-
-    def initialize():
-        pass
-
-    def get_state(self):
-        pass
-    
-    def load_state(self):
-        pass
-
-    def __str__(self) -> str:
-        pass
+from supers.main import *
 
 class LinearLayer(Layer):
 
@@ -43,7 +17,7 @@ class LinearLayer(Layer):
     
     def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray, float]:
         assert prev.shape[1] == X.T.shape[0] or np.isscalar(X)
-        return np.dot(prev, X.T), prev if self.fit_intercept else 0
+        return np.dot(prev, X.T), prev if self.fit_intercept else 0, self.weights
     
     def initialize(self):
         if self.rng:
@@ -67,6 +41,12 @@ class LinearLayer(Layer):
     
     def __str__(self) -> str:
         return f"Linear_layer_{self.pos}"
+    
+    def update_state_dict(self, weight_update: list[object], bias_update: list[object] | None = None) -> None:
+
+        self.weights = np.array([update(self.weights[i]) for i, update in enumerate(weight_update)])
+        if bias_update:
+            self.bias = np.array([update(self.bias[i]) for i, update in enumerate(bias_update)])
 
 class ReLU(Layer):
 
@@ -80,7 +60,7 @@ class ReLU(Layer):
             X = X.reshape((-1, X.shape[0]))
         return np.array([[np.maximum(0, num) for num in x] for x in X])
     
-    def get_grad(self, X: float | np.ndarray) -> np.ndarray | int:
+    def get_grad(self, X: float | np.ndarray, *args) -> np.ndarray | int:
         if np.isscalar(X):
             return int(X > 0)
         if len(X.shape) < 2:
@@ -88,5 +68,5 @@ class ReLU(Layer):
         return  np.array([[int(num > 0) for num in x] for x in X])
     
     def __str__(self) -> str:
-        return f"ReLU_layer, no info"
+        return f"Activation Layer: ReLU_layer, no info"
 
