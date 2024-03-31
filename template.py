@@ -306,7 +306,7 @@ if __name__ == "__main__":
     shuffle = True
     custom_data = False
     if not custom_data:
-        data = pd.read_csv("project_1a/data/train.csv")
+        data = pd.read_csv("models/data/train.csv")
         y = data["y"].to_numpy()
         data = data.drop(columns="y")
         X = data.to_numpy()

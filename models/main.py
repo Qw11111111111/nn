@@ -10,7 +10,7 @@ class ShallowNet(Module):
         self.neurons = neurons
         self.input_dim = input_dim
         self.ouput_dim = output_dim
-        layers = [LinearLayer(self.input_dim, self.neurons, fit_intercept=fit_intercept, rng=rng), ReLU(), LinearLayer(self.neurons, self.ouput_dim, fit_intercept=fit_intercept, rng=rng)]
+        layers = [LinearLayer(self.input_dim, self.neurons, fit_intercept=fit_intercept, rng=rng, position=0), ReLU(), LinearLayer(self.neurons, self.ouput_dim, fit_intercept=fit_intercept, rng=rng, position=1)]
         super().__init__(layers, rng, fit_intercept=fit_intercept)
     
     def forward(self, x: float | np.ndarray) -> np.ndarray:

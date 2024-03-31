@@ -16,8 +16,11 @@ class LinearLayer(Layer):
         return np.dot(X, self.weights) + self.bias
     
     def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray, float]:
-        assert prev.shape[1] == X.T.shape[0] or np.isscalar(X)
-        return np.dot(prev, X.T), prev if self.fit_intercept else 0, self.weights
+        if len(prev.shape) < 2:
+            prev = prev.reshape((prev.shape[0], -1))
+        print(prev.shape, X.T.shape)
+        assert prev.shape[0] == X.T.shape[1] or np.isscalar(X)
+        return np.dot(X.T, prev), prev if self.fit_intercept else 0, self.weights
     
     def initialize(self):
         if self.rng:
@@ -42,11 +45,15 @@ class LinearLayer(Layer):
     def __str__(self) -> str:
         return f"Linear_layer_{self.pos}"
     
-    def update_state_dict(self, weight_update: list[object], bias_update: list[object] | None = None) -> None:
-
-        self.weights = np.array([update(self.weights[i]) for i, update in enumerate(weight_update)])
+    def update_state_dict(self, weight_update: object, bias_update: object | None = None) -> None:
+        print(weight_update)
+        print(self.weights, "prior", self.pos)
+        print(self.weights.shape, "SHAPE")
+        print(self.__str__())
+        self.weights = weight_update(self.weights)
+        print(self.weights, "post", self.pos)
         if bias_update:
-            self.bias = np.array([update(self.bias[i]) for i, update in enumerate(bias_update)])
+            self.bias = np.array(bias_update(self.bias))
 
 class ReLU(Layer):
 

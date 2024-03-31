@@ -17,7 +17,6 @@ class MSELoss(Loss):
         return np.sum([(pred[i] - Y[i]) ** 2 for i in range(len(Y))]) / len(Y)
 
     def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float) -> np.ndarray | float:
-        
         if np.isscalar(Y) and np.isscalar(pred):
             return 2 * (pred - Y)
         
