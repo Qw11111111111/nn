@@ -1,12 +1,5 @@
 import numpy as np
-
-class optim():
-    
-    def __init__(self) -> None:
-        pass
-
-    def backpropagation(self) -> None:
-        pass
+from supers.main import *
 
 class SGD(optim):
 
