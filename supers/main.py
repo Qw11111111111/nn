@@ -89,9 +89,6 @@ class Loss():
 
     def __init__(self) -> None:
         pass
-
-    def get_loss(self) -> np.ndarray | float:
-        pass
     
     def  get_grad(self)-> np.ndarray:
         pass
