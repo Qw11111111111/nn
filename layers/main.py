@@ -18,21 +18,21 @@ class LinearLayer(Layer):
     def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray, float]:
         if len(prev.shape) < 2:
             prev = prev.reshape((prev.shape[0], -1))
-        print(prev.shape, X.T.shape)
+
         assert prev.shape[0] == X.T.shape[1] or np.isscalar(X)
         return np.dot(X.T, prev), prev if self.fit_intercept else 0, self.weights
     
     def initialize(self):
         if self.rng:
-            self.weights = self.rng.random((self.input_dim, self.neurons))
+            self.weights = self.rng.random((self.input_dim, self.neurons)) - 0.5
             if self.fit_intercept:
-                self.bias = self.rng.random((1, self.neurons))
+                self.bias = self.rng.random((1, self.neurons)) - 0.5
             else:
                 self.bias = np.zeros((1, self.neurons))
         else:
-            self.weights = np.random.random((self.input_dim, self.neurons))
+            self.weights = np.random.random((self.input_dim, self.neurons)) - 0.5
             if self.fit_intercept:
-                self.bias = np.random.random((1, self.neurons))
+                self.bias = np.random.random((1, self.neurons)) - 0.5
             else:
                 self.bias = np.zeros((1, self.neurons))
             
@@ -46,19 +46,15 @@ class LinearLayer(Layer):
         return f"Linear_layer_{self.pos}"
     
     def update_state_dict(self, weight_update: object, bias_update: object | None = None) -> None:
-        print(weight_update)
-        print(self.weights, "prior", self.pos)
-        print(self.weights.shape, "SHAPE")
-        print(self.__str__())
         self.weights = weight_update(self.weights)
-        print(self.weights, "post", self.pos)
         if bias_update:
             self.bias = np.array(bias_update(self.bias))
 
 class ReLU(Layer):
 
-    def __init__(self) -> None:
+    def __init__(self, position) -> None:
         super().__init__()
+        self.pos = position
 
     def forward(self, X: np.ndarray | float) -> np.ndarray | float:
         if np.isscalar(X):
@@ -67,13 +63,13 @@ class ReLU(Layer):
             X = X.reshape((-1, X.shape[0]))
         return np.array([[np.maximum(0, num) for num in x] for x in X])
     
-    def get_grad(self, X: float | np.ndarray, *args) -> np.ndarray | int:
+    def get_grad(self, _: np.any, X: float | np.ndarray, *args) -> np.ndarray | int:
         if np.isscalar(X):
             return int(X > 0)
         if len(X.shape) < 2:
             X = X.reshape((-1, X.shape[0]))
-        return  np.array([[int(num > 0) for num in x] for x in X])
+        return np.array([[int(num > 0) for num in x] for x in X])
     
     def __str__(self) -> str:
-        return f"Activation Layer: ReLU_layer, no info"
+        return f"Activation Layer: ReLU_layer, no info_{self.pos}"
 
