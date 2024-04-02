@@ -1,8 +1,13 @@
+"""The parent classes. These should not be called directly."""
 import numpy as np
-
+from utils.main import argwhere
+import math
 class Layer():
 
     def __init__(self, rng: int = None) -> None:
+        """The parent class for Layers. These are passed into models and perform the corresponding calculations.
+        Children need to implement a get_grad, a forward, an initialize, a get_state, a load_state, an update_state_dict and a __str__ methos.
+        Activation Layers do not necessarily need get_state, load_state, update_state, initialize and update_state_dict methods."""
         if rng:
             self.rng = np.random.RandomState(rng)
         else:
@@ -10,13 +15,16 @@ class Layer():
         pass
 
     def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray]:
-        pass
+        """returns the gradient of the layer given a previous gradient calculation and an input array X.
+        returns the next gradient, the weight gradient and the bias gradient in this order."""
+        return prev, 0, 0
 
     def forward(self, *args):
         return args
 
     def initialize(self):
-        pass
+        self.bias = np.array(0)
+        self.weights = np.array(0)
 
     def get_state(self):
         pass
@@ -24,7 +32,7 @@ class Layer():
     def load_state(self):
         pass
 
-    def update_state_dict(self, weight_update: list, bias_upsate: list = None) -> None:
+    def update_state_dict(self, weight: object, bias: object) -> None:
         pass
 
     def __str__(self) -> str:
@@ -41,9 +49,14 @@ class Module():
         self.fit_intercept = fit_intercept
 
     def forward(self, x: float | np.ndarray) -> float | np.ndarray:
+        if np.isscalar(x):
+            for layer in self.layers:
+                x = layer.forward(x)
+            return x
+        x = x.T
         for layer in self.layers:
             x = layer.forward(x)
-        return x
+        return x.T
 
     def reset(self) -> None:
         for layer in self.layers:
@@ -72,25 +85,21 @@ class Module():
             Names.append(str(layer))
         return Y, Names
     
-    def get_grad(self, prev_grad: np.ndarray | float, layer_idx: int, input: np.ndarray, input_to_activ: np.ndarray = None, mode: str = "hidden") -> list[np.ndarray]:
-        if mode == "hidden":
-            if not str(self.layers[layer_idx - 1]).startswith("Activation Layer"):
-                activation = np.diag(np.ones(input_to_activ.shape[0], dtype=float)).reshape(input_to_activ.shape)
-            else:
-                activation = self.layers[layer_idx - 1].get_grad(prev_grad, X=input_to_activ).reshape(input_to_activ.shape)
-            return *self.layers[layer_idx].get_grad(prev_grad, input), activation.T
-        return self.layers[layer_idx].get_grad(prev_grad, input)
-    
-    def apply_grad(self, weight_grad: dict, bias_grad: dict) -> None:
+    def get_grad(self, prev_grad: np.ndarray | float, layer_name: str, X: np.ndarray | float) -> list[np.ndarray]:
+        """returns the next gradient, the weight gradient and the bias gradient in this order. Activation layers need only return the next grad for now."""
+        return self.layers[argwhere(self.layers, layer_name)].get_grad(prev_grad, X)
+        
+    def apply_grad(self, weight_grad: dict, bias_grad: dict | None = None) -> None:
         for i, layer in enumerate(self.layers):
             layer.update_state_dict(weight_grad[str(layer)], bias_grad[str(layer)] if self.fit_intercept else None)
 
 class Loss():
 
     def __init__(self) -> None:
+        """The Loss parent class. Children need to implement the get_grad method and the __call__ method."""
         pass
     
-    def  get_grad(self)-> np.ndarray:
+    def get_grad(self)-> np.ndarray:
         pass
 
     def __call__(self, *args: np.any, **kwds: np.any) -> np.any:
@@ -99,6 +108,10 @@ class Loss():
 class optim():
     
     def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4) -> None:
+        """optimizer parent class. Takes a learning rate, a stop value and performs backpropagation on the given model,
+        which needs to implement the methods backprop_forward, get_grad, and apply grad using the given loss class,
+        which needs to implement a __call__ and a get_grad method."""
+        
         self.lr = lr
         self.model = model
         self.stop_val = stop_val
@@ -106,59 +119,43 @@ class optim():
         self.loss_model = loss
 
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
+        """Performs backpropagation on the model using the Training data X and the Labels Y"""
 
-        if np.isscalar(X):
-            X = np.array([[X]])
-        elif len(X.shape) == 1:
-            X = X.reshape((-1, X.shape[0]))
-        if np.isscalar(Y):
-            X = np.array([[Y]])
-        elif len(Y.shape) == 1:
-            Y = Y.reshape((Y.shape[0], 1))
-
-        FORWARD, NAMES = self.model.backprop_forward(X)
-        loss = self.loss_model.get_loss(pred=FORWARD[-1], Y=Y)
+        FORWARD, NAMES = self.model.backprop_forward(X.T)
+        
+        loss = self.loss_model(pred=FORWARD[-1], Y=Y.T, axis=1)
         
         if abs((self.prev_losses[-1] - loss)) < self.stop_val or loss > self.prev_losses[1] and self.prev_losses[1] > self.prev_losses[0]:
             return
         
-        model_weight_grads = {name: [] for name in NAMES}
+        model_weight_grads = {name: np.zeros(self.model.layers[i].weights.shape) for i, name in enumerate(NAMES)}
         if self.model.fit_intercept:
-            model_bias_grads = {name: [] for name in NAMES}
+            model_bias_grads = {name: np.zeros(self.model.layers[i].bias.shape) for i, name in enumerate(NAMES)}
+        prev_grad = self.loss_model.get_grad(pred=FORWARD[-1], Y=Y.T)
         
-        prev_grad = self.loss_model.get_grad(pred=FORWARD[-1], Y=Y)
+        FORWARD, NAMES = list(reversed(FORWARD)), list(reversed(NAMES))
 
-        for i, name in enumerate(reversed(NAMES[2:])):
-            i += 1
-            if NAMES[-i].startswith("Activation Layer"):
-                continue
-            weight_grad, bias_grad, weights, activation_grad = self.model.get_grad(prev_grad, -i, FORWARD[-i - 1], FORWARD[-i - 2])
+        for i, name in enumerate(NAMES):
+            prev_grad, weight_grad, bias_grad = self.model.get_grad(prev_grad, name, FORWARD[i + 1])
+            model_weight_grads[name] += weight_grad
             if self.model.fit_intercept:
-                model_bias_grads[name] = bias_grad
-            model_weight_grads[name] = weight_grad
-            prev_grad = np.dot(np.dot(activation_grad.T, weights).T, prev_grad)
+                model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape)
         
-        weight_grad, bias_grad, weights = self.model.get_grad(prev_grad.reshape((-1, prev_grad.shape[0])), 0, X, mode="input")
-        model_weight_grads[NAMES[0]] = weight_grad
+        def normalize(X: np.ndarray) -> float:
+            return - 1
+
+        apply_model_weight_grads = {name: 0 for _, name in enumerate(NAMES)}
         if self.model.fit_intercept:
-            model_bias_grads[NAMES[0]] = bias_grad
+            apply_model_bias_grads = {name: 0 for _, name in enumerate(NAMES)}
 
-        get_direction = lambda x: np.array(- x / np.sqrt(np.sum([[num ** 2 for num in row] for row  in x]))).reshape((len(x), -1)) if not isinstance(x, float) else - x
+        for i, name in enumerate(NAMES):
+            apply_model_weight_grads[name] = np.dot(self.lr, np.dot(model_weight_grads[name], normalize(model_weight_grads[name])))
+        if self.model.fit_intercept:
+            for i, name in enumerate(NAMES):
+                apply_model_bias_grads[name] = np.dot(self.lr, np.dot(model_bias_grads[name], normalize(model_bias_grads[name])))
 
-        for i, name in enumerate(list(model_weight_grads.keys())):
-            grad = model_weight_grads[name]
-            if not isinstance(grad, np.ndarray):
-                continue
-            model_weight_grads[name] = lambda x: x + self.lr * get_direction(grad).reshape(x.shape)
+        self.model.apply_grad(apply_model_weight_grads, apply_model_bias_grads if self.model.fit_intercept else None)
         
-        if self.model.fit_intercept:
-            for i, name in enumerate(list(model_bias_grads.keys())):
-                grad = model_bias_grads[name]
-                if not isinstance(grad, np.ndarray):
-                    continue
-                model_bias_grads[name] = lambda x: x + self.lr * get_direction(grad)
-            
-        self.model.apply_grad(model_weight_grads, model_bias_grads if self.model.fit_intercept else None)
-
         self.prev_losses[0], self.prev_losses[1] = self.prev_losses[1], loss
+
 

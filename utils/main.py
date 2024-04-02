@@ -15,3 +15,8 @@ def loss(X, w, Y, lambda_value: float = 0, func = lambda x: x) ->  float:
     if np.isscalar(Y):
         Y = np.array([Y])
     return - np.dot(np.transpose(X), (Y - np.dot(X, func(w)))) + 2 * lambda_value * func(w)
+
+def argwhere(v: list | np.ndarray, val: str | float) -> int:
+    for i, value in enumerate(v):
+        if str(value) == str(val):
+            return i
