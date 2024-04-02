@@ -21,15 +21,15 @@ class ShallowNet(Module):
 
 class DeepNet(Module):
 
-    def __init__(self, rng: int = None, fit_intercept: bool = True, input_dim: int = 1, output_dim: int = 1) -> None:
+    def __init__(self, rng: int = None, fit_intercept: bool = False, input_dim: int = 1, output_dim: int = 1) -> None:
         self.input_dim = input_dim
         self.ouput_dim = output_dim
         layers = [
-            LinearLayer(input_dim, 10, 10, fit_intercept, position=0),
+            LinearLayer(input_dim, 10, fit_intercept, position=0),
             ReLU(position=1),
-            LinearLayer(10, 5, 5, fit_intercept, position=2),
+            LinearLayer(10, 5, fit_intercept, position=2),
             ReLU(position=3),
-            LinearLayer(5, 1, 1, fit_intercept, position=4)
+            LinearLayer(5, 1, fit_intercept, position=4)
         ]
 
         super().__init__(layers, rng, fit_intercept)
@@ -42,5 +42,20 @@ class Linear_regressor(Module):
         layers = [
             LinearLayer(input_dim, output_dim, fit_intercept, rng)
         ]
+        super().__init__(layers, rng, fit_intercept)
+
+class VeryDeepModel(Module):
+
+    def __init__(self, rng: int = None, fit_intercept: bool = False, input_dim: int = 1, output_dim: int = 1, num_of_layers: int = 5, neurons: int = 20) -> None:
+        self.input_dim = input_dim
+        self.ouput_dim = output_dim
+        layers = [
+            LinearLayer(input_dim, neurons, fit_intercept, position=0), 
+            ReLU(position=0) 
+        ]
+        for i in range(1, num_of_layers):
+            layers += [LinearLayer(neurons, neurons, fit_intercept, rng, i), ReLU(i)]
+        layers += [LinearLayer(neurons, output_dim, fit_intercept, rng, i + 1)]
+
         super().__init__(layers, rng, fit_intercept)
 

@@ -1,7 +1,7 @@
 """The parent classes. These should not be called directly."""
 import numpy as np
 from utils.main import argwhere
-import math
+
 class Layer():
 
     def __init__(self, rng: int = None) -> None:

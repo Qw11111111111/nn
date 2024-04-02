@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.core.fromnumeric import any as any
 from supers.main import *
 
     

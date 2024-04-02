@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from models.main import ShallowNet
+import loss_functions
+from optims.main import GD
+class loss__(loss_functions.main.MSELoss):
+    def __init__(self):
+        super().__init__()
 
 def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
     if X and w:
@@ -211,31 +217,31 @@ class shallow_net():
         self.previous_loss = [np.inf, np.inf]
         
         if not self.random_state:
-            self.output_weights: np.ndarray = np.random.random((self.neurons, self.output_dim))
-            self.weights: np.ndarray = np.random.random((self.input_dim, self.neurons))
+            self.output_weights: np.ndarray = np.random.random((self.neurons, self.output_dim)) - 0.5
+            self.weights: np.ndarray = np.random.random((self.input_dim, self.neurons)) - 0.5
             self.biases: np.ndarray = np.zeros((1, self.neurons))
             self.output_bias: np.ndarray = np.zeros((1, self.output_dim))
             if self.fit_intercept:
-                self.output_bias: np.ndarray = np.random.random((1, self.output_dim))
-                self.biases: np.ndarray = np.random.random((1, self.neurons))
+                self.output_bias: np.ndarray = np.random.random((1, self.output_dim)) - 0.5
+                self.biases: np.ndarray = np.random.random((1, self.neurons)) - 0.5
         
         elif isinstance(self.random_state, int):
-            self.random_state = np.random.RandomState(self.random_state)
-            self.output_weights = self.random_state.random((self.neurons, self.output_dim))
-            self.weights: np.ndarray = self.random_state.random((self.input_dim, self.neurons))
+            self.random_state = np.random.RandomState(self.random_state) - 0.5
+            self.output_weights = self.random_state.random((self.neurons, self.output_dim)) - 0.5
+            self.weights: np.ndarray = self.random_state.random((self.input_dim, self.neurons)) - 0.5
             self.biases = np.zeros((1, self.neurons))
             self.output_bias = np.zeros((1, self.output_dim))
             if self.fit_intercept:
-                self.output_bias: np.ndarray = self.random_state.random((1, self.output_dim))
-                self.biases = self.random_state.random((1, self.neurons))
+                self.output_bias: np.ndarray = self.random_state.random((1, self.output_dim)) - 0.5
+                self.biases = self.random_state.random((1, self.neurons)) - 0.5
         
         else:
-            self.output_weights = self.random_state.random((self.neurons, self.output_dim))
-            self.weights: np.ndarray = self.random_state.random((self.input_dim, self.neurons))
+            self.output_weights = self.random_state.random((self.neurons, self.output_dim)) - 0.5
+            self.weights: np.ndarray = self.random_state.random((self.input_dim, self.neurons)) - 0.5
             self.biases = np.zeros((1, self.neurons))
             if self.fit_intercept:
-                self.output_bias: np.ndarray = self.random_state.random((1, self.output_dim))
-                self.biases = self.random_state.random((1, self.neurons))
+                self.output_bias: np.ndarray = self.random_state.random((1, self.output_dim)) - 0.5
+                self.biases = self.random_state.random((1, self.neurons)) - 0.5
     
     def get_loss(self, X: np.ndarray, y_true: np.ndarray):
         """returns the loss"""
@@ -260,12 +266,17 @@ def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
 
     model = RegressionModel(lr=LEARNING_RATE, stop=STOP, input_size=len(X[0]), add_randomness=False, bias=False, momentum=True, beta=0.5, SGD=True, batch_size=10)
     model_2 = shallow_net(input_dim=X.shape[1], neurons=20, fit_intercept=False, lr=2e-3)
+    model_3 = ShallowNet(20, X.shape[1], fit_intercept=False)
+
+    loss_func = loss__()
+    optim = GD(lr=1e-6, model=model_3, loss=loss_func)
 
     # plots the predictions of the model prior to training
     plt.plot(np.linspace(0, len(X), len(X)), y)
     plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
     plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
-    plt.legend(["Real data", "Predicted Data", "pred shallow"])
+    plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    plt.legend(["Real data", "Predicted Data", "pred shallow", "new shallow"])
     plt.show()
     
     #training and testing of the model on the dataset. Batching of the data is possible
@@ -279,6 +290,7 @@ def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
         model_2.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
         model.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
         losses.append(model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:]))
+        #optim.backpropagation(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:].T)
         if  i % 10 == 0:
             #print(f"Epoch: {i} | train_loss: {np.mean(loss(X[:TRAIN_SPLIT], model.weights, y[:TRAIN_SPLIT])):.3f} | test_loss: {np.mean(loss(X[TRAIN_SPLIT:], model.weights, y[TRAIN_SPLIT:])):.3f}")
             print(f"Epoch: {i} | train_loss: {model_2.get_loss(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])} | test_loss: {model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:])}")
@@ -298,7 +310,8 @@ def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
     plt.plot(np.linspace(0, len(X), len(X)), y)
     plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
     plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
-    plt.legend(["Real data", "Predicted Data", "pred shallow"])
+    plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    plt.legend(["Real data", "Predicted Data", "pred shallow", "pred new shallow"])
     plt.show()
 
 if __name__ == "__main__":
@@ -318,5 +331,6 @@ if __name__ == "__main__":
         X = np.array([[data[i], x_2_data[i], x_3_data[i]] for i in range(len(data))])
     
     print(data[:5])
-   
+    print(X[:5])
+    print(y[:5])
     main(X, y, shuffle)
