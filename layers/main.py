@@ -1,15 +1,14 @@
-from turtle import forward
 import numpy as np
 from supers.main import *
 
 class LinearLayer(Layer):
 
-    def __init__(self, input_dim: int, neurons: int, fit_intercept: bool = False, rng: int = None, position: int = 0) -> None:
+    def __init__(self, input_dim: int, neurons: int, fit_intercept: bool = True, rng: int = None, position: int = 0) -> None:
         super().__init__(rng)
         self.input_dim = input_dim
         self.neurons = neurons
         self.fit_intercept = fit_intercept
-        self.pos = position # auto
+        self.pos = position # automate this
         self.initialize()
 
     def forward(self, X: np.ndarray | float) -> np.ndarray:

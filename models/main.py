@@ -1,9 +1,8 @@
-from re import M
 import numpy as np
 from loss_functions.main import *
 from layers.main import *
 from supers.main import *
-from supers.main import Layer
+
 
 
 class ShallowNet(Module):
@@ -21,7 +20,7 @@ class ShallowNet(Module):
 
 class DeepNet(Module):
 
-    def __init__(self, rng: int = None, fit_intercept: bool = False, input_dim: int = 1, output_dim: int = 1) -> None:
+    def __init__(self, rng: int = None, fit_intercept: bool = True, input_dim: int = 1, output_dim: int = 1) -> None:
         self.input_dim = input_dim
         self.ouput_dim = output_dim
         layers = [
@@ -46,7 +45,7 @@ class Linear_regressor(Module):
 
 class VeryDeepModel(Module):
 
-    def __init__(self, rng: int = None, fit_intercept: bool = False, input_dim: int = 1, output_dim: int = 1, num_of_layers: int = 5, neurons: int = 20) -> None:
+    def __init__(self, rng: int = None, fit_intercept: bool = True, input_dim: int = 1, output_dim: int = 1, num_of_layers: int = 5, neurons: int = 20) -> None:
         self.input_dim = input_dim
         self.ouput_dim = output_dim
         layers = [
