@@ -3,7 +3,7 @@ import numpy as np
 from utils.main import argwhere
 
 class Layer():
-
+    
     def __init__(self, rng: int = None) -> None:
         """The parent class for Layers. These are passed into models and perform the corresponding calculations.
         Children need to implement a get_grad, a forward, an initialize, a get_state, a load_state, an update_state_dict and a __str__ methos.
