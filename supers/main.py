@@ -22,7 +22,9 @@ class Layer():
     def forward(self, X: np.ndarray) -> np.ndarray:
         return X
 
-    def initialize(self) -> None:
+    def initialize(self, index: int = None) -> None:
+        if index:
+            self.pos = index
         self.bias = np.array(0)
         self.weights = np.array(0)
 
@@ -40,12 +42,12 @@ class Layer():
 
 class Module():
 
-    def __init__(self, layers: list[Layer], rng: int = None, fit_intercept: bool = True, *args, **kwargs) -> None:
+    def __init__(self, layers: list[Layer], rng: int = None, fit_intercept: bool = True, layer_order: str = "auto", *args, **kwargs) -> None:
         self.layers = layers
         if rng:
             self.rng = np.random.RandomState(rng)
-        for layer in self.layers:
-            layer.initialize()
+        for i, layer in enumerate(self.layers):
+            layer.initialize(i if layer_order == "auto" else None)
         self.fit_intercept = fit_intercept
 
     def forward(self, x: float | np.ndarray) -> float | np.ndarray:
@@ -107,7 +109,7 @@ class Loss():
 
 class optim():
     
-    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, *args, **kwargs) -> None:
+    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, momentum: bool = False, alpha: float = 0.01, *args, **kwargs) -> None:
         """optimizer parent class. Takes a learning rate, a stop value and performs backpropagation on the given model,
         which needs to implement the methods backprop_forward, get_grad, and apply grad using the given loss class,
         which needs to implement a __call__ and a get_grad method."""
@@ -117,6 +119,8 @@ class optim():
         self.stop_val = stop_val
         self.prev_losses = [np.inf, np.inf]
         self.loss_model = loss
+        self.alpha = alpha
+        self.momentum = momentum
 
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
         """Performs backpropagation on the model using the Training data X and the Labels Y"""
@@ -142,17 +146,20 @@ class optim():
                 model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape)
         
         def normalize(X: np.ndarray | None = None) -> float:
-            return - 1
+            if np.isscalar(X) or not X.shape:
+                return -X / (X if X != 0 else 1)
+            z =  np.array(-X / (norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 else 1 ))
+            return z
 
         apply_model_weight_grads = {name: 0 for _, name in enumerate(NAMES)}
         if self.model.fit_intercept:
             apply_model_bias_grads = {name: 0 for _, name in enumerate(NAMES)}
 
         for i, name in enumerate(NAMES):
-            apply_model_weight_grads[name] = np.dot(self.lr, np.dot(model_weight_grads[name], normalize(model_weight_grads[name])))
+            apply_model_weight_grads[name] = self.lr * normalize(model_weight_grads[name])
         if self.model.fit_intercept:
             for i, name in enumerate(NAMES):
-                apply_model_bias_grads[name] = np.dot(self.lr, np.dot(model_bias_grads[name], normalize(model_bias_grads[name])))
+                apply_model_bias_grads[name] = self.lr * normalize(model_bias_grads[name])
 
         self.model.apply_grad(apply_model_weight_grads, apply_model_bias_grads if self.model.fit_intercept else None)
         
