@@ -102,6 +102,9 @@ class LeakyReLU(Layer):
             return 1 if X >= 0 else - self.alpha
         if len(X.shape) < 2:
             return np.array([1 if num >= 0 else - self.alpha for num in X])
+        return np.array([[1 if num >= 0 else - self.alpha for num in row] for row in X]), 0, 0
+        # This sadly does not work due to too small values leading to rounding errors
+        X /= np.amax(X)
         return (ar_3 := - np.amin([((ones := np.ones_like(X)) - (ar_2 := np.amin([np.exp(X), ones], axis = 0))) * (ar_2 + ones), (np.zeros_like(X) + self.alpha)], axis = 0)) + ones + 1 / self.alpha * ones * ar_3, 0, 0
         
     def __str__(self) -> str:
