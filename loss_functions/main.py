@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.core.fromnumeric import any as any
 from supers.main import *
 
     
@@ -24,5 +25,33 @@ class MSELoss(Loss):
         return np.sum(np.square(np.sum([pred, - Y], axis = 0))) / Y.shape[axis]
         return np.sum([(pred[i] - Y[i]) ** 2 for i in range(len(Y))]) / len(Y)
 
+class RMSELoss(MSELoss):
 
+    #TBD: get grad
+
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float, axis: int | bool = 1) -> np.ndarray | float:
+        return (super().get_grad(Y, pred, axis))
+    
+    def __call__(self, Y: np.ndarray | float, pred: np.ndarray | float, axis: int = 0) -> np.ndarray | float:
+        return np.sqrt(super().__call__(Y, pred, axis))
+
+class  MAELoss(Loss):
+
+    #TBD: get grad
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float, axis: int | bool = 1) -> np.ndarray:
+        if np.isscalar(Y) and np.isscalar(pred):
+            return pred
+        return ((np.sum(np.sum([pred, - Y], axis = 0), axis = int(not axis))) / Y.shape[int(axis)]).reshape(1, Y.shape[1])
+    
+    def __call__(self, pred: np.ndarray, Y: np.ndarray, axis: int = 0) -> np.any:
+        if np.isscalar(Y) and np.isscalar(pred):
+            return pred - Y
+        return np.sum(np.sum([pred, - Y], axis = 0)) / Y.shape[axis]
 

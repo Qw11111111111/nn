@@ -27,6 +27,8 @@ class Layer():
             self.pos = index
         self.bias = np.array(0)
         self.weights = np.array(0)
+        self.old_bias = self.bias
+        self.old_weights = self.weights
 
     def get_state(self) -> dict[str, np.ndarray]:
         pass
@@ -47,8 +49,10 @@ class Module():
         if rng:
             self.rng = np.random.RandomState(rng)
         for i, layer in enumerate(self.layers):
-            layer.initialize(i if layer_order == "auto" else None)
+            position = i if layer_order == "auto" else None
+            layer.initialize(index=position)
         self.fit_intercept = fit_intercept
+        self.best_state_dict = self.get_state_dict()
 
     def forward(self, x: float | np.ndarray) -> float | np.ndarray:
         if np.isscalar(x):
@@ -94,6 +98,9 @@ class Module():
     def apply_grad(self, weight_grad: dict[str, np.ndarray], bias_grad: dict[str, np.ndarray] | None = None) -> None:
         for _, layer in enumerate(self.layers):
             layer.update_state_dict(weight_grad[str(layer)], bias_grad[str(layer)] if self.fit_intercept else None)
+        
+    def set_params(self, *args, **kwargs) -> None:
+        pass
 
 class Loss():
 
@@ -109,7 +116,7 @@ class Loss():
 
 class optim():
     
-    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, momentum: bool = False, alpha: float = 0.01, *args, **kwargs) -> None:
+    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, momentum: bool = False, alpha: float = 0.01, normalization_rate: float = 1, *args, **kwargs) -> None:
         """optimizer parent class. Takes a learning rate, a stop value and performs backpropagation on the given model,
         which needs to implement the methods backprop_forward, get_grad, and apply grad using the given loss class,
         which needs to implement a __call__ and a get_grad method."""
@@ -121,16 +128,20 @@ class optim():
         self.loss_model = loss
         self.alpha = alpha
         self.momentum = momentum
+        if not momentum:
+            self.aplha = 0
+        self.normalization_rate = normalization_rate
 
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
         """Performs backpropagation on the model using the Training data X and the Labels Y"""
 
         FORWARD, NAMES = self.model.backprop_forward(X.T)
+        self.batch_size = X.shape[0]
         
         loss = self.loss_model(pred=FORWARD[-1], Y=Y.T, axis=1)
         
         if abs((self.prev_losses[-1] - loss)) < self.stop_val or loss > self.prev_losses[1] and self.prev_losses[1] > self.prev_losses[0]:
-            return
+            pass
         
         model_weight_grads = {name: np.zeros(self.model.layers[i].weights.shape) for i, name in enumerate(NAMES)}
         if self.model.fit_intercept:
@@ -141,14 +152,14 @@ class optim():
 
         for i, name in enumerate(NAMES):
             prev_grad, weight_grad, bias_grad = self.model.get_grad(prev_grad, name, FORWARD[i + 1])
-            model_weight_grads[name] += weight_grad
+            model_weight_grads[name] += weight_grad / self.batch_size
             if self.model.fit_intercept:
-                model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape)
+                model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape) / self.batch_size
         
         def normalize(X: np.ndarray | None = None) -> float:
             if np.isscalar(X) or not X.shape:
-                return -X / (X if X != 0 else 1)
-            z =  np.array(-X / (norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 else 1 ))
+                return -X / (self.normalization_rate * X if X != 0 else 1)
+            z =  np.array(-X / (self.normalization_rate * norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 else 1 ))
             return z
 
         apply_model_weight_grads = {name: 0 for _, name in enumerate(NAMES)}
@@ -156,13 +167,18 @@ class optim():
             apply_model_bias_grads = {name: 0 for _, name in enumerate(NAMES)}
 
         for i, name in enumerate(NAMES):
-            apply_model_weight_grads[name] = self.lr * normalize(model_weight_grads[name])
+            apply_model_weight_grads[name] = self.lr * normalize(model_weight_grads[name]) + self.alpha * (self.model.layers[argwhere(self.model.layers, name)].weights - self.model.layers[argwhere(self.model.layers, name)].old_weights)
         if self.model.fit_intercept:
             for i, name in enumerate(NAMES):
-                apply_model_bias_grads[name] = self.lr * normalize(model_bias_grads[name])
+                apply_model_bias_grads[name] = self.lr * normalize(model_bias_grads[name]) + self.alpha * (self.model.layers[argwhere(self.model.layers, name)].bias - self.model.layers[argwhere(self.model.layers, name)].old_bias)
 
         self.model.apply_grad(apply_model_weight_grads, apply_model_bias_grads if self.model.fit_intercept else None)
         
         self.prev_losses[0], self.prev_losses[1] = self.prev_losses[1], loss
+    
+    def set_params(self, *args, **kwargs) -> None:
+        self.model = kwargs["model"]
+        self.lr = kwargs["lr"]
+        self.loss_model = kwargs["loss_model"]
 
 

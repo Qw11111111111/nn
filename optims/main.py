@@ -5,10 +5,10 @@ from supers.main import *
 
 class SGD(optim):
 
-    #TODO: optimize this process !!! + does nt wrk yet?
+    #TODO: optimize this process !!! (works, very slow for small batch size(naturally))
 
-    def __init__(self, model: Module, loss: Loss, batch_size: int = 1, momentum: bool = False, alpha: float = 0.01, lr: float = 1e-4, stop_val: float = 1e-5) -> None:
-        super().__init__(lr, model, loss, stop_val, momentum, alpha)
+    def __init__(self, model: Module, loss: Loss, batch_size: int = 1, momentum: bool = False, alpha: float = 0.01, lr: float = 1e-4, stop_val: float = 1e-5, normalization_rate: float = 1, *args, **kwargs) -> None:
+        super().__init__(lr, model, loss, stop_val, momentum, alpha, *args, normalization_rate, **kwargs)
         self.batch_size = batch_size
     
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:

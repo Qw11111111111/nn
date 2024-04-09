@@ -3,6 +3,8 @@ from supers.main import *
 
 class LinearLayer(Layer):
 
+    # Need to transpose all layers in order to allow inputs of shape(n, dim)
+
     def __init__(self, input_dim: int, neurons: int, fit_intercept: bool = True, rng: int = None, position: int = 0) -> None:
         super().__init__(rng)
         self.input_dim = input_dim
@@ -18,7 +20,9 @@ class LinearLayer(Layer):
         #assert prev.shape[0] == X.T.shape[1] or np.isscalar(X)
         return np.dot(self.weights.T, prev), np.dot(prev, X.T), prev if self.fit_intercept else 0
     
-    def initialize(self):
+    def initialize(self, index: int = None):
+        if index:
+            self.pos = index
         if self.rng:
             self.weights = self.rng.random((self.neurons, self.input_dim)) - 0.5
             if self.fit_intercept:
@@ -31,6 +35,8 @@ class LinearLayer(Layer):
                 self.bias = np.random.random((self.neurons, 1)) - 0.5
             else:
                 self.bias = np.zeros((self.neurons, 1))
+        self.old_weights = self.weights
+        self.old_bias = self.bias
             
     def get_state(self) -> dict:
         return {"weights": self.weights, "bias": self.bias}
@@ -42,9 +48,9 @@ class LinearLayer(Layer):
         return f"Linear_layer_{self.pos}"
     
     def update_state_dict(self, weight_update: np.ndarray, bias_update: np.ndarray | None = None) -> None:
-        self.weights += weight_update
+        self.old_weights, self.weights = self.weights, self.weights + weight_update
         if self.fit_intercept:
-            self.bias += bias_update.reshape(self.bias.shape)
+            self.old_bias, self.bias = self.bias, self.bias + bias_update
 
 class ReLU(Layer):
 
@@ -68,6 +74,8 @@ class ReLU(Layer):
         return f"Activation layer: ReLU_layer, no info_{self.pos}"
 
 class  Softmax(Layer):
+
+    #TBD
 
     def __init__(self, rng: int = None, position: int = 0) -> None:
         super().__init__(rng)
