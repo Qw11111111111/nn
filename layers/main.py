@@ -164,3 +164,15 @@ class Flatten(Layer):
     
     def __str__(self) -> str:
         return f"Activation layer: Flatten_layer, no info_{self.pos}"
+
+class Conv1dLayer(Layer):
+    pass
+
+class Conv2dLayer(Layer):
+    pass
+
+class MaxPool1dLayer(Layer):
+    pass
+
+class MaxPool2dLayer(Layer):
+    pass

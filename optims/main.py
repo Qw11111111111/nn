@@ -1,6 +1,4 @@
-from colorsys import yiq_to_rgb
 import numpy as np
-from streamlit import stop
 from supers.main import *
 
 class SGD(optim):
@@ -21,6 +19,8 @@ class SGD(optim):
     
 class Adam(optim):
 
+    #TODO
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -28,6 +28,8 @@ class Adam(optim):
         return super().backpropagation()
     
 class Momentum(optim):
+    
+    #TODO
 
     def __init__(self) -> None:
         super().__init__()
@@ -42,3 +44,6 @@ class GD(optim):
 
     def backpropagation(self, X: np.ndarray, Y: np.ndarray) -> None:
         return super().backpropagation(X, Y)
+
+class AdaMax(optim):
+    pass

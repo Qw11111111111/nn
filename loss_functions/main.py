@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.core.fromnumeric import any as any
 from supers.main import *
 
     
@@ -55,3 +54,17 @@ class  MAELoss(Loss):
             return pred - Y
         return np.sum(np.sum([pred, - Y], axis = 0)) / Y.shape[axis]
 
+class CrossEntropyLoss(Loss):
+
+    #TODO: all
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, Y: np.ndarray | float, pred: np.ndarray | float) -> float:
+        return super().__call__(Y, pred)
+    
+    def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float) -> np.ndarray:
+        return super().get_grad(Y, pred)
+
+    
