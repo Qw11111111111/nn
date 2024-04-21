@@ -16,7 +16,7 @@ class SGD(optim):
             X_train, Y_train = X[i:i + self.batch_size], Y[i:i + self.batch_size]
             super().backpropagation(X_train, Y_train)
         
-    
+
 class Adam(optim):
 
     #TODO

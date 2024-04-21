@@ -256,45 +256,55 @@ def loss(X, w, Y, lambda_value: float = 0, func = lambda x: x) ->  float:
         Y = np.array([Y])
     return - np.dot(np.transpose(X), (Y - np.dot(X, func(w)))) + 2 * lambda_value * func(w)
 
-def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
+def main(X: np.ndarray, y: np.ndarray, shuffle: bool = False) -> None:
     """takes a np.array X, a vector y and shuffle
     fits a Linear model to the given data and outputs some relevant data"""
-    EPOCHS = 2000
+    EPOCHS = 1500
     STOP = 1e-4
-    TRAIN_SPLIT = int(0.8 * len(X))
+    TRAIN_SPLIT = int(1 * len(X))
     LEARNING_RATE = 1e-2
+    if custom_data:
+        X = X.reshape((X.shape[0], -1))
+        y = y.reshape((y.shape[0], -1))
+    print(X.shape)
 
-    model = RegressionModel(lr=LEARNING_RATE, stop=STOP, input_size=len(X[0]), add_randomness=False, bias=False, momentum=True, beta=0.5, SGD=True, batch_size=10)
-    model_2 = shallow_net(input_dim=X.shape[1], neurons=20, fit_intercept=False, lr=2e-3)
+    model = RegressionModel(lr=LEARNING_RATE, stop=STOP, input_size=X.shape[1], add_randomness=False, bias=False, momentum=True, beta=0.5, SGD=True, batch_size=10)
+    model_2 = shallow_net(input_dim=X.shape[1], neurons=40, fit_intercept=False, lr=5e-4)
     model_3 = ShallowNet(20, X.shape[1], fit_intercept=False)
 
     loss_func = loss__()
     optim = GD(lr=1e-6, model=model_3, loss=loss_func)
 
     # plots the predictions of the model prior to training
-    plt.plot(np.linspace(0, len(X), len(X)), y)
-    plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
-    plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
-    plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    if not custom_data:
+        plt.plot(np.linspace(0, len(X), len(X)), y)
+        plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
+        plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
+        plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    else:
+        plt.plot(X, y)
+        plt.plot(X, model.forward(X))
+        plt.plot(X, model_2.forward(X))
+        plt.plot(X, model_3.forward(X))
     plt.legend(["Real data", "Predicted Data", "pred shallow", "new shallow"])
     plt.show()
     
     #training and testing of the model on the dataset. Batching of the data is possible
-    print(f"Weight before training: {model.weights} | Bias before training: {model.bias}")
+    #print(f"Weight before training: {model.weights} | Bias before training: {model.bias}")
 
     losses = []
     for i in range(EPOCHS):
         if shuffle:
             rand_perm = np.random.permutation(len(X))
-            X, y = np.array([X[i] for i in rand_perm]), np.array([y[i] for i in rand_perm])
+            X_new, y_new = np.array([X[i] for i in rand_perm]), np.array([y[i] for i in rand_perm])
         model_2.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
-        model.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
-        losses.append(model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:]))
-        #optim.backpropagation(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:].T)
-        if  i % 10 == 0:
+        #model.backpropagation(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])
+        losses.append(model_2.get_loss(X[TRAIN_SPLIT - 20:], y[TRAIN_SPLIT - 20:]))
+        #optim.backpropagation(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:])
+        if  i % 100 == 0:
             #print(f"Epoch: {i} | train_loss: {np.mean(loss(X[:TRAIN_SPLIT], model.weights, y[:TRAIN_SPLIT])):.3f} | test_loss: {np.mean(loss(X[TRAIN_SPLIT:], model.weights, y[TRAIN_SPLIT:])):.3f}")
-            print(f"Epoch: {i} | train_loss: {model_2.get_loss(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT])} | test_loss: {model_2.get_loss(X[TRAIN_SPLIT:], y[TRAIN_SPLIT:])}")
-    print(f"Weight after training: {model.weights} | Bias after training: {model.bias}")
+            print(f"Epoch: {i} | train_loss: {model_2.get_loss(X[:TRAIN_SPLIT], y[:TRAIN_SPLIT]):.3g} | test_loss: {model_2.get_loss(X[TRAIN_SPLIT - 20:], y[TRAIN_SPLIT - 20:]):.3g}")
+    #print(f"Weight after training: {model.weights:.3g} | Bias after training: {model.bias:.3g}")
     
 
     # plots the loss curve
@@ -307,16 +317,22 @@ def main(X: np.ndarray, y: np.ndarray, shuffle: bool = True) -> None:
 
 
     # plots the predictions of the model after training
-    plt.plot(np.linspace(0, len(X), len(X)), y)
-    plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
-    plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
-    plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    if not custom_data:
+        plt.plot(np.linspace(0, len(X), len(X)), y)
+        plt.plot(np.linspace(0, len(X), len(X)), model.forward(X))
+        plt.plot(np.linspace(0, len(X), len(X)), model_2.forward(X))
+        plt.plot(np.linspace(0, len(X), len(X)), model_3.forward(X))
+    else:
+        plt.plot(X, y)
+        plt.plot(X, model.forward(X))
+        plt.plot(X, model_2.forward(X))
+        plt.plot(X, model_3.forward(X))
     plt.legend(["Real data", "Predicted Data", "pred shallow", "pred new shallow"])
     plt.show()
 
 if __name__ == "__main__":
     rng = np.random.RandomState(42)
-    shuffle = True
+    shuffle = False
     custom_data = False
     if not custom_data:
         data = pd.read_csv("models/data/train.csv")
@@ -324,13 +340,11 @@ if __name__ == "__main__":
         data = data.drop(columns="y")
         X = data.to_numpy()
     else:
-        data = np.linspace(0, 200, 200)
-        x_2_data = np.linspace(0, 20, 200)
-        x_3_data = np.linspace(200, 1000, 200)
-        y = np.linspace(0, 50, 200)
-        X = np.array([[data[i], x_2_data[i], x_3_data[i]] for i in range(len(data))])
+        X = np.linspace(-100, 100, 10000)
+        y = X ** 3 + 0.5 *  X ** 2 - 2 * X + 3
     
-    print(data[:5])
+    
+    #print(data[:5])
     print(X[:5])
     print(y[:5])
     main(X, y, shuffle)

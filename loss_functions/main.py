@@ -13,6 +13,7 @@ class MSELoss(Loss):
         
         #assert Y.shape[0] == pred.shape[0]
         #print(Y, pred)
+        #return 0.5 * (np.sum(np.dot(2, np.sum([pred, - Y], axis = 0))) / Y.shape[int(axis)]) does not work currently
         return 0.5 * (np.sum(np.dot(2, np.sum([pred, - Y], axis = 0)), axis = int(not axis)) / Y.shape[int(axis)]).reshape(1, Y.shape[1])
         return np.sum([2 * (pred[i] - Y[i]) for i in range(len(Y))], axis=1) / len(Y)
     

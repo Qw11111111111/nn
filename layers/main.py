@@ -74,12 +74,12 @@ class ReLU(Layer):
         if len(X.shape) < 2:
             return np.array([int(num >= 0) for num in X]), 0, 0
         return np.array([[int(num >= 0) for num in x] for x in X]).reshape(X.shape), 0, 0
-        # does not work currently
+        # does not work currently need to redo backprop 
         if np.isscalar(X):
             return prev * int(X > 0), 0, 0
         if len(X.shape) < 2:
             return np.dot(prev, np.array([int(num >= 0) for num in X])), 0, 0
-        return np.dot(prev, np.array([[int(num >= 0) for num in x] for x in X]).T), 0, 0
+        return np.dot(np.array([[int(num >= 0) for num in x] for x in X]).reshape(X.shape), prev.T), 0, 0
     
     def __str__(self) -> str:
         return f"Activation layer: ReLU_layer, no info_{self.pos}"

@@ -1,6 +1,7 @@
 """The parent classes. These should not be called directly."""
+from ast import AnnAssign
 import numpy as np
-from utils.main import argwhere
+from utils.main import argwhere, l2
 
 class Layer():
     
@@ -53,6 +54,7 @@ class Module():
             layer.initialize(index=position)
         self.fit_intercept = fit_intercept
         self.best_state_dict = self.get_state_dict()
+        self.dropouts = np.zeros(len(self.layers))
 
     def forward(self, x: float | np.ndarray) -> float | np.ndarray:
         if np.isscalar(x):
@@ -96,11 +98,21 @@ class Module():
         return self.layers[argwhere(self.layers, layer_name)].get_grad(prev_grad, X)
         
     def apply_grad(self, weight_grad: dict[str, np.ndarray], bias_grad: dict[str, np.ndarray] | None = None) -> None:
-        for _, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.layers):
+            if self.dropouts[i] == 1:
+                #print("hello")
+                pass
+            #print("dud")
             layer.update_state_dict(weight_grad[str(layer)], bias_grad[str(layer)] if self.fit_intercept else None)
         
     def set_params(self, *args, **kwargs) -> None:
         pass
+
+    def dropout(self, dropout_rate: float = 2e-1, *arg, **kwargs) -> np.any:
+        for i, layer in enumerate(self.layers):
+            if np.random.random() < dropout_rate:
+                self.dropouts[i] = 1
+
 
 class Loss():
 
@@ -131,6 +143,10 @@ class optim():
         if not momentum:
             self.aplha = 0
         self.normalization_rate = normalization_rate
+        self.dropout = True
+        if "dropout" in kwargs.keys():
+            self.dropout = kwargs["dropout"]
+        self.regularization = l2 # this is actually the normalization
 
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
         """Performs backpropagation on the model using the Training data X and the Labels Y"""
@@ -142,7 +158,8 @@ class optim():
         
         if abs((self.prev_losses[-1] - loss)) < self.stop_val or loss > self.prev_losses[1] and self.prev_losses[1] > self.prev_losses[0]:
             pass
-        
+        if self.dropout:
+            self.model.dropout(dropout_rate=5e-2)
         model_weight_grads = {name: np.zeros(self.model.layers[i].weights.shape) for i, name in enumerate(NAMES)}
         if self.model.fit_intercept:
             model_bias_grads = {name: np.zeros(self.model.layers[i].bias.shape) for i, name in enumerate(NAMES)}
@@ -151,15 +168,17 @@ class optim():
         FORWARD, NAMES = list(reversed(FORWARD)), list(reversed(NAMES))
 
         for i, name in enumerate(NAMES):
-            prev_grad, weight_grad, bias_grad = self.model.get_grad(prev_grad, name, FORWARD[i + 1])
+            #prev_grad = prev_grad - self.regularization(self.model.layers[argwhere(self.model.layers, name)].weights, grad = True) * 1e-4
+            #print(name, prev_grad.shape, self.model.layers[argwhere(self.model.layers, name)].weights.shape)
+            prev_grad, weight_grad, bias_grad = self.model.get_grad(prev_grad, name, FORWARD[i + 1]) # need to mutiply by grad of activation instead of passing it through activation
             model_weight_grads[name] += weight_grad / self.batch_size
             if self.model.fit_intercept:
                 model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape) / self.batch_size
         
         def normalize(X: np.ndarray | None = None) -> float:
             if np.isscalar(X) or not X.shape:
-                return -X / (self.normalization_rate * X if X != 0 else 1)
-            z =  np.array(-X / (self.normalization_rate * norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 else 1 ))
+                return -X / (self.normalization_rate * X if X != 0 and self.normalization_rate != 0 else 1)
+            z =  np.array(-X / (self.normalization_rate * norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 and self.normalization_rate != 0 else 1 ))
             return z
 
         apply_model_weight_grads = {name: 0 for _, name in enumerate(NAMES)}
@@ -171,9 +190,7 @@ class optim():
         if self.model.fit_intercept:
             for i, name in enumerate(NAMES):
                 apply_model_bias_grads[name] = self.lr * normalize(model_bias_grads[name]) + self.alpha * (self.model.layers[argwhere(self.model.layers, name)].bias - self.model.layers[argwhere(self.model.layers, name)].old_bias)
-
         self.model.apply_grad(apply_model_weight_grads, apply_model_bias_grads if self.model.fit_intercept else None)
-        
         self.prev_losses[0], self.prev_losses[1] = self.prev_losses[1], loss
     
     def set_params(self, *args, **kwargs) -> None:

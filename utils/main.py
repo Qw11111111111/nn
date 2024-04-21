@@ -32,6 +32,9 @@ def argwhere(v: list | np.ndarray, val: str | float) -> int:
             return i
 
 class CV():
+
+    #TODO: fix get_indices
+
     def __init__(self, cv_folds: int = 5, permute: bool = True):
         self.cv_folds = cv_folds
         self.permute = permute
@@ -110,3 +113,15 @@ def train_model(X: np.ndarray, Y: np.ndarray, model: Module, loss: Loss, optim: 
         plt.show()
 
     return model
+
+def l2(w: np.ndarray, y: np.ndarray = None, grad: bool = False) -> float:
+    if grad:
+        # assuming l2 ** 2
+        if not y:
+            return 2 * np.sum(w)
+        else:
+            return 2 * np.sum(w + y)
+    if not y:
+        return np.sqrt(np.sum(np.square(w)))
+    else:
+        return np.sqrt(np.sum(np.square(w + y)))

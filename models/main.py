@@ -4,7 +4,6 @@ from layers.main import *
 from supers.main import *
 
 
-
 class ShallowNet(Module):
     
     def __init__(self, neurons: int, input_dim: int, output_dim: int = 1, fit_intercept: bool = True, rng: int = None) -> None:
@@ -57,4 +56,6 @@ class VeryDeepModel(Module):
         layers += [LinearLayer(neurons, output_dim, fit_intercept, rng, i + 1)]
 
         super().__init__(layers, rng, fit_intercept)
+
+
 

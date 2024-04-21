@@ -52,7 +52,10 @@ print(loss_2(array_2, array_, 1))
 print(loss(array_.T, array_2.T))"""
 year = 1900
 print(year % 4 == 0 and (not year % 100 == 0 or year % 400 == 0))
-print([1,2,3,4,5,6,7,8,9,0][:])
+ar_1 = np.array(([1,2], [3, 4]))
+ar_2 = np.array(([[1, 2]]))
+print(ar_1.shape,  ar_2.shape)
+print(np.dot(ar_2, ar_1))
 assert False
 zeros = np.zeros(array_.shape)
 print(np.amax([array_, zeros], axis = 0))
