@@ -17,17 +17,17 @@ parser.add_argument("-e", "--epochs", action="store", help="the number of epochs
 args = parser.parse_args()
 
 torch_model = nn.Sequential(
-    nn.Linear(1, 50),
+    nn.Linear(1, 500),
     nn.ReLU(),
-    nn.Linear(50, 1)
+    nn.Linear(500, 1)
 )
 
 model_4 = DeepNet(fit_intercept=True, rng = 42)
-model_4 = ShallowNet(fit_intercept=False, neurons=50, input_dim=1, rng = 42)
-#model_4 = DeepNet(fit_intercept=False, input_dim=1)
+model_4 = ShallowNet(fit_intercept=True, neurons=50, input_dim=1, rng = 42)
+model_4 = DeepNet(fit_intercept=True, input_dim=1)
 #model_4 = Linear_regressor(input_dim=1, output_dim=1, rng=42)
 #model_4 = VeryDeepModel(input_dim=1, rng=42, neurons=30, num_of_layers=5)
-X_0 = np.array([np.linspace(i, 100, 10000) for i in range(13)]).T
+X_0 = np.array([np.linspace(i, 100, 10000) for i in range(13)])
 X_0 = np.linspace(-100, 100, 100)
 y_0 = np.sin(X_0)
 y_0 = 1 / 200 * (X_0 ** 3 + 0.5 *  X_0 ** 2 - 2 * X_0) + 3 + np.random.normal(scale=10, size=len(y_0))
@@ -38,7 +38,7 @@ y_true = 2 * X_0
 #y = 4 * X[:, 0] + 20 * X[:, 1] + np.sum([i * X[:, i] for i in range(2, 13)]) + 5 
 plt.plot(X_0, y_0)
 plt.plot(X_0, y_0)
-plt.plot(X_0, model_4.forward(X_0.reshape((X_0.shape[0], -1))))
+plt.plot(X_0, model_4.forward(X_0.reshape((X_0.shape[0], -1)).T).squeeze())
 plt.plot(X_0, torch_model.forward(torch.from_numpy(X_0).unsqueeze(1)).detach().numpy())
 plt.legend(["data", "truth", "deep net", "torch"])
 plt.grid(True)
@@ -56,7 +56,7 @@ y = np.array([y_0[i] for i in indices])
 TRAIN_SPLIT = int(len(X) * 0.8)
 X_train, y_train = X[:TRAIN_SPLIT].reshape((X[:TRAIN_SPLIT].shape[0], -1)), y[:TRAIN_SPLIT].reshape((y[:TRAIN_SPLIT].shape[0], -1))
 #print((z := model_4.get_state_dict()))
-
+print(X_train.shape, y_train.shape)
 losses_4 = []
 """for train_indices, test_indices in cv.get_indices(X[:TRAIN_SPLIT]):
     print(train_indices, " | " , test_indices)
@@ -85,7 +85,7 @@ for epoch in range(EPOCHS):
 plt.plot(X_0, y_true)
 plt.plot(X_0, y_0)
 plt.plot(X_0, model_4.forward(X_0.reshape((X_0.shape[0], -1))))
-plt.plot(X_0, torch_model.forward(torch.from_numpy(X_0).unsqueeze(1)).detach().squeeze().numpy())
+plt.plot(X_0, torch_model.forward(torch.from_numpy(X_0).unsqueeze(1)).detach().numpy())
 plt.legend(["truth", "data", "deep net", "torch"])
 plt.grid(True)
 plt.show()

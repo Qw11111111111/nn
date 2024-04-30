@@ -1,0 +1,52 @@
+outsorce grad to layers, might need to use currying? 
+grad of loss needs to be of size(n, 1) ? or (1, d) or (1, 1) ? think its (1, d)
+check my gradient calculations in linear layer.
+
+diagonalize gradient of phi(x) and multiply the previous by that. Might fis shape issued, need to check that.
+
+numerical test for shallow net:
+
+In: x.shape = (n, d)
+
+layer1: bias1 + dot(x, weights1) weights1.shape = (d, m1), bias1.shape = (1, 1) or (1, m1)?
+x2 = phi(layers) = ReLU(layer1).shape = (n, m1)  x2.shape = (n, m1)
+y_pred = layer2: bias2 + dot(x2, weights2); weights2.shape = (m1, m2), bias2.shape = (1, 1) or (1, m2)? y_pred.shape = (n, m2)
+
+loss: MSELoss = 0.5 * sum(square(y - y_pred))
+
+backprop:
+
+grad(loss)/y_pred : sum(y - y_pred) shape = (1, m2) := d_l
+
+assume shape (1,1) (y.shape = (1,1)(or (n, m2)))
+
+grad(loss)/weights2 : d_l * d_y_pred / d_weights2 (x2 = shape = (n, m1)) = d_l * x2 -> scalar * n,m1 = n,m1 false, need (m1, m2)
+grad(loss)/weights1 : d_l / d_l1 * d_l1/d_w1 = d_l/x2 * dx2/l1 * dl1 / dw1 = dl / dy * dy/dx2 * dx2/dl1 * dl1/dw1 = d_l * weights2 * d_phi(l1) * x
+== shapes: (1,1) * (m1, m2) * (n, m1) * (n, d)
+--> transpose: (1,1) * (m1, m2).T * (n, m1).T * (n, d) = (1, d) is this correct? no need(d, m1)
+
+assume shape(n, m2)(y.shape = (n, m2))
+
+grad(loss)/weights2 : d_l * d_y_pred / d_weights2 (x2 = shape = (n, m)) = d_l * x2 -> (1, m2) * n,m1 = n,m1 false if: d_l.shape == (n, m2) --> x.T * d_l = d_w2 (m1, m2) which would be correct
+grad(loss)/weights1 : d_l / d_l1 * d_l1/d_w1 = d_l/x2 * dx2/l1 * dl1 / dw1 = dl / dy * dy/dx2 * dx2/dl1 * dl1/dw1 = d_l * weights2 * d_phi(l1) * x
+== shapes: (1,m2) * (m1, m2) * (n, m1) * (n, d)
+--> transpose: (1,m2) * (m1, m2).T * (n, m1).T * (n, d) works, = (1, d) is this correct? no, need(d, m1)
+--> if l_1.shape == (n, m2) and diag(d_phi).shape == (m1, m1) ->x.T * l_1 * w2.T * diag(d_phi) = (n, d).T * (n, m2) * (m1, m2).T * (m1, m1) = (d, m1), which is correct
+(or l_1.shape)
+
+---> l_1.shape(n, m2) seems to work if I can get d_phi to be of size(m1, m1) instead of (n, m1) --> svd(d_phi.T)?
+
+Q: 
+Is the SVD of M(n, m) just the diagonalized matrix?. It appears to be the case, i am not sure though. --> Might just use it, as this is changable rather easily
+
+----> algorithm:
+store forward pass
+for each layer calculate dlayer/dweights = d_prev.T * input # sould be input.T * d_prev ? yes.
+                        dlayer/dbias = 1 * d_prev (need to check this)
+                        d_next = d_prev * weights.T 
+                        Problem: d_phi needs to be multiplied from the left --> d_next = d_prev * diag(d_phi) (or(diag(d_phi) * d_prev.T).T), actually not a problem.
+
+
+                        --> for each activation layer calculate:
+                                                            d_next = d_prv * diag(d_phi(input))
+                                                

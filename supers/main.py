@@ -1,5 +1,4 @@
 """The parent classes. These should not be called directly."""
-from ast import AnnAssign
 import numpy as np
 from utils.main import argwhere, l2
 
@@ -15,10 +14,10 @@ class Layer():
             self.rng = None
         self.pos = pos
 
-    def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray]:
+    '''def get_grad(self, prev: np.ndarray | float, X: np.ndarray | float) -> list[np.ndarray]:
         """returns the gradient of the layer given a previous gradient calculation and an input array X.
         returns the next gradient, the weight gradient and the bias gradient in this order."""
-        return prev, 0, 0
+        return prev, 0, 0'''
 
     def forward(self, X: np.ndarray) -> np.ndarray:
         return X
@@ -30,6 +29,8 @@ class Layer():
         self.weights = np.array(0)
         self.old_bias = self.bias
         self.old_weights = self.weights
+        self.bias_grad = np.zeros_like(self.bias)
+        self.weight_grad = np.zeros_like(self.weights)
 
     def get_state(self) -> dict[str, np.ndarray]:
         pass
@@ -39,6 +40,11 @@ class Layer():
 
     def update_state_dict(self, weight: np.ndarray, bias: np.ndarray) -> None:
         pass
+
+    def grad(self, prev: np.ndarray, X: np.ndarray) -> np.ndarray:
+        """returns the next grad and applies the weight and bias grad to self"""
+        next_grad = prev
+        return next_grad
 
     def __str__(self) -> str:
         return f"Layer at position_{self.pos}"
@@ -61,10 +67,9 @@ class Module():
             for layer in self.layers:
                 x = layer.forward(x)
             return x
-        x = x.T
         for layer in self.layers:
             x = layer.forward(x)
-        return x.T
+        return x
 
     def reset(self) -> None:
         for layer in self.layers:
@@ -93,16 +98,14 @@ class Module():
             Names.append(str(layer))
         return Y, Names
     
-    def get_grad(self, prev_grad: np.ndarray | float, layer_name: str, X: np.ndarray | float) -> list[np.ndarray]:
+    '''def get_grad(self, prev_grad: np.ndarray | float, layer_name: str, X: np.ndarray | float) -> list[np.ndarray]:
         """returns the next gradient, the weight gradient and the bias gradient in this order. Activation layers need only return the next grad for now."""
-        return self.layers[argwhere(self.layers, layer_name)].get_grad(prev_grad, X)
+        return self.layers[argwhere(self.layers, layer_name)].get_grad(prev_grad, X)'''
         
     def apply_grad(self, weight_grad: dict[str, np.ndarray], bias_grad: dict[str, np.ndarray] | None = None) -> None:
         for i, layer in enumerate(self.layers):
             if self.dropouts[i] == 1:
-                #print("hello")
                 pass
-            #print("dud")
             layer.update_state_dict(weight_grad[str(layer)], bias_grad[str(layer)] if self.fit_intercept else None)
         
     def set_params(self, *args, **kwargs) -> None:
@@ -121,6 +124,7 @@ class Loss():
         pass
     
     def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float)-> np.ndarray:
+        """returns an array of shape(pred.shape)"""
         pass
 
     def __call__(self, Y: np.ndarray | float, pred: np.ndarray | float) -> float:
@@ -128,7 +132,7 @@ class Loss():
 
 class optim():
     
-    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, momentum: bool = False, alpha: float = 0.01, normalization_rate: float = 1, *args, **kwargs) -> None:
+    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 1e-4, *args, **kwargs) -> None:
         """optimizer parent class. Takes a learning rate, a stop value and performs backpropagation on the given model,
         which needs to implement the methods backprop_forward, get_grad, and apply grad using the given loss class,
         which needs to implement a __call__ and a get_grad method."""
@@ -138,59 +142,27 @@ class optim():
         self.stop_val = stop_val
         self.prev_losses = [np.inf, np.inf]
         self.loss_model = loss
-        self.alpha = alpha
-        self.momentum = momentum
-        if not momentum:
-            self.aplha = 0
-        self.normalization_rate = normalization_rate
-        self.dropout = True
-        if "dropout" in kwargs.keys():
-            self.dropout = kwargs["dropout"]
-        self.regularization = l2 # this is actually the normalization
 
-    def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
-        """Performs backpropagation on the model using the Training data X and the Labels Y"""
-
-        FORWARD, NAMES = self.model.backprop_forward(X.T)
+    def backpropagation(self, X: np.ndarray, Y: np.ndarray) -> None:
+        """performs one optimization step over all provided data points"""
+        FORWARD, NAMES = self.model.backprop_forward(X)
         self.batch_size = X.shape[0]
-        
-        loss = self.loss_model(pred=FORWARD[-1], Y=Y.T, axis=1)
+    	
+        FORWARD, NAMES = list(reversed(FORWARD)), list(reversed(NAMES))
+
+        loss = self.loss_model(pred=FORWARD[0], Y=Y, axis=0)
         
         if abs((self.prev_losses[-1] - loss)) < self.stop_val or loss > self.prev_losses[1] and self.prev_losses[1] > self.prev_losses[0]:
             pass
-        if self.dropout:
-            self.model.dropout(dropout_rate=5e-2)
-        model_weight_grads = {name: np.zeros(self.model.layers[i].weights.shape) for i, name in enumerate(NAMES)}
-        if self.model.fit_intercept:
-            model_bias_grads = {name: np.zeros(self.model.layers[i].bias.shape) for i, name in enumerate(NAMES)}
-        prev_grad = self.loss_model.get_grad(pred=FORWARD[-1], Y=Y.T)
+
+        prev_grad = self.loss_model.get_grad(pred=FORWARD[-1], Y=Y)
         
-        FORWARD, NAMES = list(reversed(FORWARD)), list(reversed(NAMES))
-
-        for i, name in enumerate(NAMES):
-            #prev_grad = prev_grad - self.regularization(self.model.layers[argwhere(self.model.layers, name)].weights, grad = True) * 1e-4
-            #print(name, prev_grad.shape, self.model.layers[argwhere(self.model.layers, name)].weights.shape)
-            prev_grad, weight_grad, bias_grad = self.model.get_grad(prev_grad, name, FORWARD[i + 1]) # need to mutiply by grad of activation instead of passing it through activation
-            model_weight_grads[name] += weight_grad / self.batch_size
-            if self.model.fit_intercept:
-                model_bias_grads[name] += np.sum(bias_grad, axis = -1).reshape(model_bias_grads[name].shape) / self.batch_size
+        for i, layer in enumerate(reversed(self.model.layers)):
+            prev_grad = layer.grad(prev_grad, FORWARD[i + 1])
         
-        def normalize(X: np.ndarray | None = None) -> float:
-            if np.isscalar(X) or not X.shape:
-                return -X / (self.normalization_rate * X if X != 0 and self.normalization_rate != 0 else 1)
-            z =  np.array(-X / (self.normalization_rate * norm if all((norm := np.sqrt(np.sum(np.square(X), axis = 0)))) != 0 and self.normalization_rate != 0 else 1 ))
-            return z
+        for layer in self.model.layers:
+            layer.update_state_dict(-self.lr * layer.weight_grad, -self.lr * layer.bias_grad)
 
-        apply_model_weight_grads = {name: 0 for _, name in enumerate(NAMES)}
-        if self.model.fit_intercept:
-            apply_model_bias_grads = {name: 0 for _, name in enumerate(NAMES)}
-
-        for i, name in enumerate(NAMES):
-            apply_model_weight_grads[name] = self.lr * normalize(model_weight_grads[name]) + self.alpha * (self.model.layers[argwhere(self.model.layers, name)].weights - self.model.layers[argwhere(self.model.layers, name)].old_weights)
-        if self.model.fit_intercept:
-            for i, name in enumerate(NAMES):
-                apply_model_bias_grads[name] = self.lr * normalize(model_bias_grads[name]) + self.alpha * (self.model.layers[argwhere(self.model.layers, name)].bias - self.model.layers[argwhere(self.model.layers, name)].old_bias)
-        self.model.apply_grad(apply_model_weight_grads, apply_model_bias_grads if self.model.fit_intercept else None)
         self.prev_losses[0], self.prev_losses[1] = self.prev_losses[1], loss
     
     def set_params(self, *args, **kwargs) -> None:
