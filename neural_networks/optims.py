@@ -1,5 +1,6 @@
 import numpy as np
 from parents.parentclasses import optim, Loss, Module
+from utils.maths import l2, l1
 
 class SGD(optim):
 
@@ -65,8 +66,18 @@ class AdaMax(optim):
 
 class ElasticNet(optim):
 
-    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 0.0001, *args, **kwargs) -> None:
+    #TODO: implement ridge and lasso penalty
+
+    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 0.0001, ridge: float = 5e-1, lasso: float = 5e-1, *args, **kwargs) -> None:
         super().__init__(lr, model, loss, stop_val, *args, **kwargs)
+        assert ridge >= 0, "ridge penalty cannot be smaller 0"
+        assert lasso >= 0, "lasso penalty cannot be smaller 0"
+        self.ridge = ridge
+        self.lasso = lasso
 
     def backpropagation(self, X: np.ndarray, Y: np.ndarray) -> None:
-        return super().backpropagation(X, Y)
+        super().backpropagation(X, Y)
+        for i, layer in enumerate(self.model.layers):
+            layer.bias_grad = layer.bias_grad + self.ridge * l2(layer.bias, grad=True, squared=True) + self.lasso * l1(layer.bias, grad=True)
+            layer.weight_grad = layer.weight_grad + self.ridge * l2(layer.weights, grad=True, squared=True) + self.lasso * l1(layer.weights, grad=True)
+            layer.update_state_dict(-self.lr * layer.weight_grad, -self.lr * layer.bias_grad)
