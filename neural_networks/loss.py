@@ -51,16 +51,21 @@ class  MAELoss(Loss):
         return np.sum(np.sum([pred, - Y], axis = 0)) / Y.shape[axis]
 
 class CrossEntropyLoss(Loss):
-
-    #TODO: all
+#https://en.wikipedia.org/wiki/Cross-entropy
+    #TODO: check if correct
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def __call__(self, Y: np.ndarray | float, pred: np.ndarray | float) -> float:
-        return super().__call__(Y, pred)
+        return np.dot(-Y, np.log(pred)) - np.dot((1 - Y), np.log(1 - pred))
     
     def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float) -> np.ndarray:
-        return super().get_grad(Y, pred)
+        if np.isscalar(Y) and np.isscalar(pred):
+            return (pred - Y) / pred.shape[0]
+        
+        grad = pred - Y
+        assert grad.shape == pred.shape, f"wrong shape: {grad.shape}"
+        return grad
 
     
