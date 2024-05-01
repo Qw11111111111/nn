@@ -1,8 +1,7 @@
 from template import shallow_net
-from layers.main import *
-from loss_functions.main import *
-from models.main import *
-from optims.main import *
+from neural_networks.loss import *
+from models.neural_nets import *
+from neural_networks.optims import *
 import matplotlib.pyplot as plt
 import torch
 from torch import nn

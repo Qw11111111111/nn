@@ -1,6 +1,6 @@
 import numpy as np
-from supers.main import *
-    
+from parents.parentclasses import Loss
+
 class MSELoss(Loss):
     
     def __init__(self, *args, **kwargs) -> None:

@@ -1,8 +1,8 @@
-from layers.main import *
-from loss_functions.main import *
-from models.main import *
-from optims.main import *
-from utils.main import CV, train_model, cv_models, cv_optims
+from neural_networks.loss import MSELoss
+from models.linear_regression import Linear_regressor
+from models.neural_nets import *
+from neural_networks.optims import SGD, GD
+from utils.training import CV, train_model, cv_models, cv_optims
 import matplotlib.pyplot as plt
 import argparse
 import torch

@@ -1,20 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from models.main import ShallowNet
-import loss_functions
-from optims.main import GD
-class loss__(loss_functions.main.MSELoss):
+from models.neural_nets import ShallowNet
+from neural_networks import loss
+from neural_networks.optims import GD
+from utils.maths import MSELoss
+
+
+class loss__(loss.MSELoss):
     def __init__(self):
         super().__init__()
-
-def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
-    if X and w:
-        pred = np.dot(X, w)
-    if mode == "forward":
-        return np.sum([(pred[i] - Y[i]) ** 2 for i in range(len(Y))]) / len(Y)
-    else:
-        return 2 * (pred[0] - Y[0])
 
 class RegressionModel():
     """A Linear Regression model for multi dimensional linear regression tasks. Does not implement Ridge yet and has room to improve"""
@@ -99,6 +94,7 @@ class RegressionModel():
             self.weights = np.random.random(self.input_size)
             if self.add_bias:
                 self.bias = np.random.random()
+
 class shallow_net():
     
     def __init__(self, input_dim: int, neurons: int | np.ndarray, output_dim: int = 1,fit_intercept: bool = True, random_state: int | np.random.RandomState = None, activation_func = lambda x: np.array([[num if num > 0 else 0 for num in row] for row in x]), d_activation_func = lambda x: np.array([[1 if num > 0 else 0 for num in row] for row in x]), loss = MSELoss, lr: int = 1e-3, optim: str = "GD") -> None:

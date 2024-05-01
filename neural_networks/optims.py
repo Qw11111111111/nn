@@ -1,5 +1,5 @@
 import numpy as np
-from supers.main import *
+from parents.parentclasses import *
 
 class SGD(optim):
 

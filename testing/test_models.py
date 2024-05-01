@@ -1,12 +1,13 @@
-from layers.main import *
-from loss_functions.main import *
-from models.main import *
-from optims.main import *
-from utils.main import CV, train_model, cv_models, cv_optims
+from neural_networks.loss import MSELoss
+from models.linear_regression import Linear_regressor
+from models.neural_nets import *
+from neural_networks.optims import GD, SGD
+from utils.training import CV, train_model, cv_models, cv_optims
 import matplotlib.pyplot as plt
 import argparse
 import torch
 from torch import nn
+
 torch.set_default_dtype(torch.float64)
 
 parser = argparse.ArgumentParser()  
@@ -24,7 +25,7 @@ torch_model = nn.Sequential(
 
 model_4 = DeepNet(fit_intercept=True, rng = 42)
 model_4 = ShallowNet(fit_intercept=False, neurons=5, input_dim=1, rng = 42)
-model_4 = DeepNet(fit_intercept=False, input_dim=1)
+#model_4 = DeepNet(fit_intercept=False, input_dim=1)
 #model_4 = Linear_regressor(input_dim=1, output_dim=1, rng=42, fit_intercept=False)
 #model_4 = VeryDeepModel(input_dim=1, rng=42, neurons=30, num_of_layers=5)
 #X_0 = np.array([np.linspace(i, 100, 10000) for i in range(13)])

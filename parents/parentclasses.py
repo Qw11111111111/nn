@@ -1,6 +1,5 @@
 """The parent classes. These should not be called directly."""
 import numpy as np
-from utils.main import argwhere, l2
 
 class Layer():
     
