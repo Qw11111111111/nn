@@ -16,18 +16,33 @@ def loss(X, w, Y, lambda_value: float = 0, func = lambda x: x) ->  float:
         Y = np.array([Y])
     return - np.dot(np.transpose(X), (Y - np.dot(X, func(w)))) + 2 * lambda_value * func(w)
 
-def l2(w: np.ndarray, y: np.ndarray = None, grad: bool = False) -> float:
+def l2(w: np.ndarray, y: np.ndarray = None, grad: bool = False, squared: bool = False) -> float:
     #TODO implement correctly
     if grad:
-        # assuming l2 ** 2
-        if not y:
+        if squared:
             return 2 * np.sum(w)
         else:
-            return 2 * np.sum(w + y)
-    if not y:
-        return np.sqrt(np.sum(np.square(w)))
+            #TODO implement
+            pass
+    if squared:
+        if not y:
+            return np.sum(np.square(w))
+        else:
+            return np.sum(np.square(w - y))
     else:
-        return np.sqrt(np.sum(np.square(w + y)))
+        if not y:
+            return np.sqrt(np.sum(np.square(w)))
+        else:
+            return np.sqrt(np.sum(np.square(w - y)))
+    
+def l1(w: np.ndarray, y: np.ndarray = None, grad: bool = False) -> float:
+    #TODO check if correct
+    if grad:
+        return np.sum(np.ones_like(w))
+    if not y:
+        return np.sum(w)
+    else:
+        return np.sum(np.square(w - y))
 
 def diagonal(X: np.ndarray, is_diagonalizable: bool = False, svd: bool = True) -> np.ndarray:
     """diagonalizes the input matrix X and returns a diagonal matrix of shape(min(X.shape), min(X.shape))"""
