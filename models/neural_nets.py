@@ -1,7 +1,7 @@
 import numpy as np
 from neural_networks.loss import *
 from neural_networks.layers import activations, linear, conv
-from parents.parentclasses import Module
+from parents.parentclasses import Module, Layer
 
 class ShallowNet(Module):
     
@@ -48,4 +48,24 @@ class VeryDeepModel(Module):
         super().__init__(layers, rng, fit_intercept)
 
 
+class MLP(Module):
+
+    def __init__(self, input_dim: int = 1, output_dim: int = 2, layers: list[Layer] | None = None, rng: int = None, fit_intercept: bool = True, layer_order: str = "auto", *args, **kwargs) -> None:
+        if layers is None:
+            layers = [
+                linear.LinearLayer(input_dim, input_dim, fit_intercept, rng),
+                activations.ReLU(),
+                linear.LinearLayer(input_dim, 200, fit_intercept, rng, 1),
+                activations.ReLU(1),
+                linear.LinearLayer(200, 200, fit_intercept, rng, 2),
+                activations.ReLU(2),
+                linear.LinearLayer(200, 100, fit_intercept, rng, 3),
+                activations.ReLU(3),
+                linear.LinearLayer(100, output_dim, fit_intercept, rng, 4),
+                activations.Softmax(4)
+            ]
+        super().__init__(layers, rng, fit_intercept, layer_order, *args, **kwargs)
+
+    def forward(self, x: float | np.ndarray) -> float | np.ndarray:
+        return super().forward(x)
 
