@@ -19,7 +19,7 @@ class ReLU(Layer):
         if len(X.shape) < 2:
             X = X.reshape((X.shape[0], 1))
         # assuming n > dim
-        return np.dot(prev, diagonal(np.logical_not(X <= 0), is_diagonalizable=True))
+        return np.dot(prev, diagonal(X > 0, is_diagonalizable=True))
 
     def __str__(self) -> str:
         return f"Activation layer: ReLU_layer, no info_{self.pos}"
@@ -29,14 +29,22 @@ class Softmax(Layer):
     #TBD
 
     def __init__(self, rng: int = None, position: int = 0) -> None:
-        super().__init__(rng)
-        self.pos = position
+        super().__init__(rng, position)
     
-    def forward(self, X: np.ndarray):
-        return np.exp(X) / np.sum(np.exp(X))
+    def forward(self, X: np.ndarray) -> np.ndarray:
+        return np.array([np.exp(x) / np.sum(np.exp(x), axis=0) for x in X])
     
-    def grad(self, prev: np.ndarray, X: float | np.ndarray, *args) -> np.ndarray | float:
-        return np.exp(X) / np.sum(np.exp(X))
+    def grad(self, prev: np.ndarray, X: float | np.ndarray, *args) -> np.ndarray:
+        # problem: X is of shape n*m, but softmax wants 1*m with the output being m*m. --> sum up all jacobians for each vector 
+        #is this true, or should this actually be diag(softmax(X))?
+        #--> need to loop over data ig...
+        jacobian = np.zeros(shape = (X.shape[1], X.shape[1]))
+        #which = np.bool_(np.diag(np.ones(shape=(X.shape[1]))))
+        for x in X:
+            jacobian += np.diag([x[i] * (1 - x[i]) for i in range(len(x))])
+            jacobian += np.array([[-x[i] * x[j] if i == j else 0 for j in range(len(x))] for i in range(len(x))])
+
+        return np.dot(prev, jacobian) # do i need to take diagonal() on jac again?
     
     def __str__(self) -> str:
         return f"Activation layer: Softmax_layer, no info_{self.pos}"
@@ -59,9 +67,6 @@ class LeakyReLU(Layer):
         if len(X.shape) < 2:
             X = X.reshape((X.shape[0], 1))
         return np.dot(prev, diagonal((pos := X > 0) - self.alpha * ~pos))
-        # This sadly does not work due to too small values leading to rounding errors
-        X /= np.amax(X)
-        return (ar_3 := - np.amin([((ones := np.ones_like(X)) - (ar_2 := np.amin([np.exp(X), ones], axis = 0))) * (ar_2 + ones), (np.zeros_like(X) + self.alpha)], axis = 0)) + ones + 1 / self.alpha * ones * ar_3
     
     def __str__(self) -> str:
         return f"Activation layer: ReLU_layer, no info_{self.pos}"
