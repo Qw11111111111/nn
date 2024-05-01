@@ -158,9 +158,6 @@ class optim():
         
         for i, layer in enumerate(reversed(self.model.layers)):
             prev_grad = layer.grad(prev_grad, FORWARD[i + 1])
-        
-        for layer in self.model.layers:
-            layer.update_state_dict(-self.lr * layer.weight_grad, -self.lr * layer.bias_grad)
 
         self.prev_losses[0], self.prev_losses[1] = self.prev_losses[1], loss
     
