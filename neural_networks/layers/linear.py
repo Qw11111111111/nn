@@ -26,7 +26,7 @@ class LinearLayer(Layer):
         else:
             self.weights = np.random.normal(loc=0, scale= 2 / self.neurons, size=(self.input_dim, self.neurons))
             if self.fit_intercept:
-                self.bias = np.random.normal(loc=0, scale= 2 / self.neurons, size=(1, self.neurons)) # is this correct , or is it actually (1, 1)
+                self.bias = np.random.normal(loc=0, scale= 2 / self.neurons, size=(1, self.neurons))
             else:
                 self.bias = np.zeros((1, self.neurons))
         self.old_weights = self.weights
@@ -48,9 +48,9 @@ class LinearLayer(Layer):
 
     def grad(self, prev: np.ndarray, X: np.ndarray) -> np.ndarray:
         """returns the next grad and applies the weight and bias grad to self"""
-        next_grad, self.weight_grad, self.bias_grad = np.dot(prev, self.weights.T), np.dot(X.T, prev), prev if self.fit_intercept else self.bias
+        next_grad, self.weight_grad, self.bias_grad = np.dot(prev, self.weights.T), np.dot(X.T, prev), np.sum(prev, axis=0, keepdims=True) if self.fit_intercept else self.bias
         assert self.weight_grad.shape == self.weights.shape, f"wrong weight grad shape in layer {str(self)}, grad: {self.weight_grad.shape}, weight: {self.weights.shape}"
-        assert self.bias_grad.shape == self.bias.shape, f"wrong bias grad shape in layer {str(self)}"
+        assert self.bias_grad.shape == self.bias.shape, f"wrong bias grad shape in layer {str(self)}, grad: {self.bias_grad.shape}, bias: {self.bias.shape}"
         return next_grad
 
     def __str__(self) -> str:
