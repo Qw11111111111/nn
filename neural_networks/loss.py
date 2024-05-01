@@ -8,7 +8,7 @@ class MSELoss(Loss):
 
     def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float, axis: int | bool = 1) -> np.ndarray | float:
         if np.isscalar(Y) and np.isscalar(pred):
-            return (pred - Y)
+            return (pred - Y) / pred.shape[0]
         
         grad = pred - Y
         assert grad.shape == pred.shape, f"wrong shape: {grad.shape}"
