@@ -25,12 +25,12 @@ def l2(w: np.ndarray, y: np.ndarray = None, grad: bool = False, squared: bool = 
             #TODO implement
             pass
     if squared:
-        if not y:
+        if y is None:
             return np.sum(np.square(w))
         else:
             return np.sum(np.square(w - y))
     else:
-        if not y:
+        if y is None:
             return np.sqrt(np.sum(np.square(w)))
         else:
             return np.sqrt(np.sum(np.square(w - y)))
@@ -98,17 +98,57 @@ class KMeans():
     
     def __init__(self, num_clusters: int | None = None) -> None:
         self.clusters = num_clusters
+        self.centroid_assignment = [[] for _ in range(self.clusters)]
+        
 
-    def fit_predict(self, X: np.ndarray) -> list[int]:
+    def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
         # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
         
-        # initialize centroids randomly
-
-        # assign each point to a cluster based on their closest centroid
-
-        # update the centroids using the average of all points assigned to it as a new centroid
-
-        # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+        # center and scale the data if needed
+        X_c = center_scale(X) 
         
+        # initialize centroids randomly
+        #list of datapoints
+        self.centroid_assignment = [[] for _ in range(self.clusters)]
+
+        #positions of centroids
+        self.centroids = np.zeros(shape=(self.clusters, X.shape[1]))
+        for i in range(self.clusters):
+            self.centroids[i] += np.random.normal()
+
+        self.last_centroids = np.zeros_like(self.centroids)
+
+
+        """
+        def update(self, X) -> None:
+            # update the centroids using the average of all points assigned to it as a new centroid
+            for i, centroid in enumerate(self.centroids):
+                datapoints = self.centroid_assignment[i]
+                # calculating the new coordinates via the mean of the associated points
+                self.centroids[i] = np.hstack([np.mean(X[datapoints][:][coord], axis=0) for coord in range(X.shape[1])])
+
+            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+            for i, point in enumerate(X):
+                best = np.argmin([l2(point, centroid) for j , centroid in enumerate(self.centroids)])
+                self.centroid_assignment[best].append(i)
+        """
+
+        while (self.centroids - self.last_centroids).all() != 0:
+            self.update(X)
+
         # return a list of the clusters for each datpoint (and the positions of the centroids?)
-        pass
+        return self.centroid_assignment, self.centroids
+
+    def update(self, X: np.ndarray) -> None:
+            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+            self.centroid_assignment = [[] for _ in range(self.clusters)]
+            for i, point in enumerate(X):
+                best = np.argmin([l2(point, centroid) for j , centroid in enumerate(self.centroids)])
+                self.centroid_assignment[best].append(i)
+            
+            # update the centroids using the average of all points assigned to it as a new centroid
+            self.last_centroids = self.centroids
+            for i, centroid in enumerate(self.centroids):
+                datapoints = self.centroid_assignment[i]
+                # calculating the new coordinates via the mean of the associated points
+                self.centroids[i] = np.hstack([np.mean(X[datapoints][coord], axis=0) for coord in range(X.shape[1])])
