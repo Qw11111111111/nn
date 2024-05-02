@@ -77,6 +77,10 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     else:
         pivot = n_components
 
+    #default to 1 if auto calculates something false
+    if pivot < 1:
+        pivot = 1
+        
     # generate the truncated SVD
     S = S[:pivot][:pivot]
     U = U[:, :pivot]    
