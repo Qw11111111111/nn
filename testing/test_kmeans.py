@@ -12,9 +12,11 @@ from random import randint
 
 pareser =  argparse.ArgumentParser()
 pareser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
+pareser.add_argument("-r", "--restarts", action="store", type=int, default=1)
 args = pareser.parse_args()
 
 centers = args.n_centers
+restarts = args.restarts
 
 X, y = make_blobs(centers=centers)
 
@@ -27,7 +29,7 @@ plt.scatter(X.T[:][0], X.T[:][1], c=[colors[i] for i in y])
 plt.show()
 
 
-kmeans = KMeans(centers)
+kmeans = KMeans(centers, n_retries=restarts)
 assignments, centroids = kmeans.fit_predict(X)
 
 nums = [argwhere(assignments, i, axis=1)[0] for i in range(X.shape[0])]
@@ -44,13 +46,16 @@ labels_sk = kmean_sk.fit_predict(X)
 
 
 
-fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+fig, ax = plt.subplots(1, 3, figsize=(15, 5))
 ax[0].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in color_assignments])
-ax[0].set_title("sklearn plot")
+ax[0].set_title("utils.math.kmeans plot")
 ax[1].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_sk])
-ax[1].set_title("utils.maths.kmeans plot")
+ax[2].set_title("sklearn plot")#ax[1].scatter(X.T[:][0], X.T[:][1],
+ax[2].scatter(X.T[:][0], X.T[:][1],
+            c=[colors[i] for i in y])
+ax[2].set_title("true blobs")
 fig.suptitle(f"Plots for Kmeans clustering with my and sklearn implementation")
 plt.show()
 
