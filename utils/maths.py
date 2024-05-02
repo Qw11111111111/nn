@@ -59,3 +59,32 @@ def diagonal(X: np.ndarray, is_diagonalizable: bool = False, svd: bool = True) -
         return np.diag(np.linalg.svd(X)[1])
     else:
         return np.diag(np.diag(X))
+    
+def center_scale(X: np.ndarray, axis: int = 0) -> np.ndarray:
+    mean = np.mean(X, axis = axis)
+    std = np.std(X, axis=axis)
+    return (X - mean) / std
+    
+def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.ndarray:
+    # center and scale the data 
+    X = center_scale(X, axis)
+    U, S, V = np.linalg.svd(X)
+    S = np.diag(S)
+    # truncate the result
+    if n_components is None:
+        # find optimal split https://stackoverflow.com/questions/4471993/compute-the-elbow-for-a-curve-automatically-and-mathematically
+        pivot = np.argmax([S[i + 1] + S[i - 1] - 2 * S[i] for i in range(1, len(S) - 1)])
+    else:
+        pivot = n_components
+
+    S = S[:pivot][:pivot]
+    U = U[:, :pivot]    
+    V = V[:pivot]
+
+    Y = np.zeros(shape=(X.shape[0], S.shape[0]))
+
+    for i in range(pivot):
+        beta = np.dot(S, V[:][i])
+        Y[:,i] = np.dot(U, beta) # + mu
+    return Y
+
