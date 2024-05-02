@@ -64,6 +64,7 @@ def cv_optims(X: np.ndarray, Y: np.ndarray, model: Module, loss: Loss, optims: l
     optim = optims[np.argmin(test_losses)]
     return optim
 
+#TODO: change this to employ SGD
 def train_model(X: np.ndarray, Y: np.ndarray, model: Module, loss: Loss, optim: optim, epochs: int = 5000, verbose: bool = False, train_split: float = 0.8, get_best: bool = False) -> Module:
     train_losses = []
     test_losses = []

@@ -77,14 +77,15 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     else:
         pivot = n_components
 
+    # generate the truncated SVD
     S = S[:pivot][:pivot]
     U = U[:, :pivot]    
     V = V[:pivot]
 
     Y = np.zeros(shape=(X.shape[0], S.shape[0]))
-
+    # calculate the new colums of Y with the SVD results accroding to Eckart-Young’s theorem.
     for i in range(pivot):
         beta = np.dot(S, V[:][i])
-        Y[:,i] = np.dot(U, beta) # + mu
+        Y[:,i] = np.dot(U, beta) # + mean
     return Y
 
