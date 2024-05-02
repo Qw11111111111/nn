@@ -1,4 +1,5 @@
 import numpy as np
+from utils.utils import argwhere
 
 def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
     if X and w:
@@ -120,21 +121,6 @@ class KMeans():
 
         self.last_centroids = np.zeros_like(self.centroids)
 
-
-        """
-        def update(self, X) -> None:
-            # update the centroids using the average of all points assigned to it as a new centroid
-            for i, centroid in enumerate(self.centroids):
-                datapoints = self.centroid_assignment[i]
-                # calculating the new coordinates via the mean of the associated points
-                self.centroids[i] = np.hstack([np.mean(X[datapoints][:][coord], axis=0) for coord in range(X.shape[1])])
-
-            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
-            for i, point in enumerate(X):
-                best = np.argmin([l2(point, centroid) for j , centroid in enumerate(self.centroids)])
-                self.centroid_assignment[best].append(i)
-        """
-
         while (self.centroids - self.last_centroids).all() != 0:
             self.update(X)
 
@@ -156,3 +142,23 @@ class KMeans():
                     continue
                 # calculating the new coordinates via the mean of the associated points
                 self.centroids[i] = np.hstack([np.mean(X[datapoints][coord], axis=0) for coord in range(X.shape[1])])
+        
+    def silhouette(self, X: np.ndarray, mean: bool = True) -> float | np.ndarray:
+        """Calculate the Silhouette Coefficient for each sample. or the mean of it"""
+        #https://en.wikipedia.org/wiki/Silhouette_(clustering)
+        silhouette_scores = np.zeros(shape=X.shape[0])
+        for i, point in enumerate(X):
+            a = 0
+            minimum = np.inf
+            assignment = argwhere(self.centroid_assignment, i, axis=1)[0]
+            for j, cluster in enumerate(self.centroid_assignment):
+                if len(self.centroid_assignment[assignment]) <= 1:
+                    continue
+                b = 0
+                if j == assignment:
+                    a += np.mean([l2(point, X[datapoint]) if datapoint != i else 0 for datapoint in cluster])
+                b += np.mean([l2(point, X[datapoint]) for datapoint in cluster])
+                if b < minimum:
+                    minimum = b
+            silhouette_scores[i] = (minimum - a) / (np.amax([a, minimum])) if len(self.centroid_assignment[assignment]) > 1 else 0
+        return np.mean(silhouette_scores) if mean else silhouette_scores
