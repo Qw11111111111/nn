@@ -1,62 +1,66 @@
 import numpy as np 
+from pytest import PytestReturnNotNoneWarning
 import sklearn.decomposition as dec
 import matplotlib.pyplot as plt
 from utils.maths import PCA
 from sklearn import datasets
+import argparse
 
-
-def pca_comparison(X, n_components, labels):
-  """X: Standardized dataset, observations on rows
-     n_components: dimensionality of the reduced space
-     labels: targets, for visualization
-  """
-
-  """ # numpy
-  # -----
-
-  # calculate eigen values
-  X_cov = np.cov(X.T)
-  e_values, e_vectors = np.linalg.eigh(X_cov)
-
-  # Sort eigenvalues and their eigenvectors in descending order
-  e_ind_order = np.flip(e_values.argsort())
-  e_values = e_values[e_ind_order]
-  e_vectors = e_vectors[:, e_ind_order] # note that we have to re-order the columns, not rows
-
-  # now we can project the dataset on to the eigen vectors (principal axes)
-  prin_comp_evd = X @ e_vectors"""
-
-
-X = np.linspace(0, 20, 100) + np.random.normal(size = 100)
-Y = 2 * X + np.random.normal(size = 100)
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--n_components", action="store", type=int, help="number of resulting components from PCA", default=1)
+args = parser.parse_args()
 
 dataset = datasets.load_iris()
 labels = dataset.target
 X = dataset.data
-"""plt.scatter(X, Y)
-plt.show()
-"""
-pca = dec.PCA(n_components=1)
 
-prin_comp_sklearn = pca.fit_transform(X)
+print(f"{X.shape = }")
+print(X[:5])
+print(f"{labels.shape = }")
+print(labels[:5])
 
-prin_comp_evd = PCA(X, n_components=1)
+n_components = args.n_components
+if n_components < 1: 
+    n_components = None
 
-print(prin_comp_sklearn[:10])
-print(prin_comp_sklearn.shape)
-print(prin_comp_evd[:10])
-print(prin_comp_evd.shape)
-n_components = 1
+pca = dec.PCA(n_components=n_components)
 
+sklearn_res = pca.fit_transform(X)
+PCA_res = PCA(X, n_components=n_components)
 
-fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-ax[0].scatter(prin_comp_sklearn[:, 0], 
-            np.zeros_like(prin_comp_sklearn[:, 0]),
-            c=labels)
-ax[0].set_title("sklearn plot")
-ax[1].scatter(prin_comp_evd[:, 0], 
-            np.zeros_like(prin_comp_evd[:, 0]),
-            c=labels)
-ax[1].set_title("PCA using EVD plot")
-fig.suptitle(f"Plots for reducing to {n_components}-D")
-plt.show()
+print(sklearn_res[:5])
+print(f"{sklearn_res.shape = }")
+print(sklearn_res[:5])
+print(f"{PCA_res.shape = }")
+print(PCA_res[:5])
+
+if n_components == 1:
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    ax[0].scatter(sklearn_res[:, 0], 
+                np.zeros_like(sklearn_res[:, 0]),
+                c=labels)
+    ax[0].set_title("sklearn plot")
+    plt.xlabel("first component of PCA")
+    ax[1].scatter(PCA_res[:, 0], 
+                np.zeros_like(PCA_res[:, 0]),
+                c=labels)
+    ax[1].set_title("PCA using utils.maths.PCA plot")
+    plt.xlabel("first component of PCA")
+    fig.suptitle(f"Plots for reducing to {n_components}-D with PCA")
+    plt.show()
+elif n_components == 2:
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    ax[0].scatter(sklearn_res[:, 0], 
+                sklearn_res[:, 1],
+                c=labels)
+    ax[0].set_title("sklearn plot")
+    plt.xlabel("first component of PCA")
+    plt.ylabel("second component of PCA")
+    ax[1].scatter(PCA_res[:, 0], 
+                PCA_res[:, 1],
+                c=labels)
+    ax[1].set_title("PCA using utils.maths.PCA plot")
+    plt.xlabel("first component of PCA")
+    plt.ylabel("second component of PCA")
+    fig.suptitle(f"Plots for reducing to {n_components}-D with PCA")
+    plt.show()
