@@ -58,14 +58,18 @@ class CrossEntropyLoss(Loss):
         super().__init__(*args, **kwargs)
 
     def __call__(self, Y: np.ndarray | float, pred: np.ndarray | float) -> float:
-        return np.dot(-Y, np.log(pred)) - np.dot((1 - Y), np.log(1 - pred))
+        return np.sum(np.dot(-Y.T, np.log(pred)) - np.dot((1 - Y).T, np.log(1 - pred)))
     
     def get_grad(self, Y: np.ndarray | float, pred: np.ndarray | float) -> np.ndarray:
+        if Y.shape != pred.shape:
+            Y = ~np.bool_(Y)
+            Y = np.column_stack((Y, ~Y))
+            Y = np.int64(Y)
         if np.isscalar(Y) and np.isscalar(pred):
             return (pred - Y) / pred.shape[0]
         
         grad = pred - Y
-        assert grad.shape == pred.shape, f"wrong shape: {grad.shape}"
+        assert grad.shape == Y.shape, f"wrong shape: {grad.shape}"
         return grad
 
     
