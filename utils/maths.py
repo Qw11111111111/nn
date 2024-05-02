@@ -73,6 +73,7 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     # truncate the result
     if n_components is None:
         # find optimal split https://stackoverflow.com/questions/4471993/compute-the-elbow-for-a-curve-automatically-and-mathematically
+        # i belive that this does not currently work correctly
         pivot = np.argmax([S[i + 1] + S[i - 1] - 2 * S[i] for i in range(1, len(S) - 1)])
     else:
         pivot = n_components
@@ -80,16 +81,34 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     #default to 1 if auto calculates something false
     if pivot < 1:
         pivot = 1
-        
+
     # generate the truncated SVD
     S = S[:pivot][:pivot]
     U = U[:, :pivot]    
     V = V[:pivot]
 
     Y = np.zeros(shape=(X.shape[0], S.shape[0]))
-    # calculate the new colums of Y with the SVD results accroding to Eckart-Young’s theorem.
+    # calculate the new columns of Y with the SVD results according to Eckart-Young’s theorem.
     for i in range(pivot):
         beta = np.dot(S, V[:][i])
         Y[:,i] = np.dot(U, beta) # + mean
     return Y
 
+class KMeans():
+    
+    def __init__(self, num_clusters: int | None = None) -> None:
+        self.clusters = num_clusters
+
+    def fit_predict(self, X: np.ndarray) -> list[int]:
+        # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
+        
+        # initialize centroids randomly
+
+        # assign each point to a cluster based on their closest centroid
+
+        # update the centroids using the average of all points assigned to it as a new centroid
+
+        # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+        
+        # return a list of the clusters for each datpoint (and the positions of the centroids?)
+        pass
