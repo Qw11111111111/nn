@@ -100,6 +100,8 @@ class KMeans():
         self.clusters = num_clusters
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         
+    def silhouette(self, X: np.ndarray) -> int:
+        pass
 
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
         # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
@@ -150,5 +152,7 @@ class KMeans():
             self.last_centroids = self.centroids
             for i, centroid in enumerate(self.centroids):
                 datapoints = self.centroid_assignment[i]
+                if len(datapoints) == 0:
+                    continue
                 # calculating the new coordinates via the mean of the associated points
                 self.centroids[i] = np.hstack([np.mean(X[datapoints][coord], axis=0) for coord in range(X.shape[1])])
