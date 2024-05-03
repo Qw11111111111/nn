@@ -13,27 +13,29 @@ from random import randint
 pareser =  argparse.ArgumentParser()
 pareser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
 pareser.add_argument("-r", "--restarts", action="store", type=int, default=1)
+pareser.add_argument("-v", "--verbose", action="store_true", default=False)
 args = pareser.parse_args()
 
-centers = args.n_centers
+centers = args.n_centers if args.n_centers > 0 else None
 restarts = args.restarts
+verbose = args.verbose
 
-X, y = make_blobs(centers=centers, n_samples=centers * 100)
+X, y = make_blobs(centers=centers, n_samples=centers * 100 if centers is not None else 200)
 
 X = center_scale(X)
 colors = []
 
-for i in range(centers):
+for i in range(centers if centers is not None else 5):
     colors.append('#%06X' % randint(0, 0xFFFFFF))
 
 
-kmeans = KMeans(centers, n_retries=restarts, verbose=True, init_method="kmeans++")
+kmeans = KMeans(centers, n_retries=restarts, verbose=verbose, init_method="kmeans++", max_clusters=10, good_score=0.9)
 assignments, centroids = kmeans.fit_predict(X)
 
-kmeans_random_choice = KMeans(centers, n_retries=restarts, verbose=True, init_method="random_choice")
+kmeans_random_choice = KMeans(centers, n_retries=restarts, verbose=verbose, init_method="random_choice")
 assignments_rc, centroids_rc = kmeans_random_choice.fit_predict(X)
 
-kmeans_random = KMeans(centers, n_retries=restarts, verbose=True, init_method="random")
+kmeans_random = KMeans(centers, n_retries=restarts, verbose=verbose, init_method="random")
 assignments_r, centroids_r = kmeans_random.fit_predict(X)
 
 nums = [argwhere(assignments, i, axis=1)[0] for i in range(X.shape[0])]
@@ -44,13 +46,13 @@ color_assignments = [nums[i] for i in range(X.shape[0])]
 color_assignments_r = [nums_r[i] for i in range(X.shape[0])] 
 color_assignments_rc = [nums_rc[i] for i in range(X.shape[0])] 
 
-s_score = kmeans.silhouette(X)
+s_score = kmeans.appr_silhouette(X)
 
 print(s_score, "mine")
 s_score_2 = silhouette_score(X, np.array(color_assignments))
 print(s_score_2, "slearn")
 
-kmean_sk = clus.KMeans(centers, init="k-means++")
+kmean_sk = clus.KMeans(centers if centers is not None else 3, init="k-means++")
 labels_sk = kmean_sk.fit_predict(X)
 
 
