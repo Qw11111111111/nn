@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 from utils.utils import argwhere
 
 def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
@@ -61,9 +62,12 @@ def diagonal(X: np.ndarray, is_diagonalizable: bool = False, svd: bool = True) -
     else:
         return np.diag(np.diag(X))
     
-def center_scale(X: np.ndarray, axis: int = 0) -> np.ndarray:
+def center_scale(X: np.ndarray, axis: int = 0, verbose: bool = False) -> np.ndarray:
+    """returns the centered and scaled data, as well as the mean and std if set to verbose"""
     mean = np.mean(X, axis = axis)
     std = np.std(X, axis=axis)
+    if verbose:
+        return (X - mean) / std, mean, std
     return (X - mean) / std
     
 def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.ndarray:
@@ -97,12 +101,14 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
 
 class KMeans():
     
-    def __init__(self, num_clusters: int | None = None, n_retries: int = 10) -> None:
+    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True) -> None:
         self.clusters = num_clusters
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         self.best_assignment = None
         self.best_centroids = None
         self.retries = n_retries
+        self.verbose = verbose
+        self.scale = scale
         
     def silhouette(self, X: np.ndarray) -> int:
         pass
@@ -111,7 +117,9 @@ class KMeans():
         # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
         
         # center and scale the data if needed
-        X = center_scale(X) 
+        # care: the returned centroid positions will be centered and scaled. If you want to plot these center the data before fitting or set scale to False
+        if self.scale:
+            X, mean, std = center_scale(X, verbose = True) 
         
         # initialize centroids randomly
         #list of datapoints
@@ -137,12 +145,12 @@ class KMeans():
                 if len(cluster) < 1:
                     continue
                 total += np.sum([l2(self.centroids[i], X[point]) for point in cluster])
-            #print(total , minimum)
+            if self.verbose:
+                print(f"Epoch: {trial} | current: {total:.3f} | min: {minimum:.3f}")
             if total < minimum:
                 minimum = total
-                self.best_assignment = self.centroid_assignment
-                self.best_centroids = self.centroids
-
+                self.best_assignment = deepcopy(self.centroid_assignment)
+                self.best_centroids = deepcopy(self.centroids)
 
         # return a list of the clusters for each datpoint (and the positions of the centroids?)
         return self.best_assignment, self.best_centroids

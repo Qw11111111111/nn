@@ -1,7 +1,7 @@
 from sklearn.datasets import make_blobs
 from sklearn.metrics import silhouette_score
 import sklearn.cluster as clus
-from utils.maths import KMeans
+from utils.maths import KMeans, center_scale
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,18 +18,16 @@ args = pareser.parse_args()
 centers = args.n_centers
 restarts = args.restarts
 
-X, y = make_blobs(centers=centers)
+X, y = make_blobs(centers=centers, n_samples=centers * 100)
 
+X = center_scale(X)
 colors = []
 
 for i in range(centers):
     colors.append('#%06X' % randint(0, 0xFFFFFF))
 
-plt.scatter(X.T[:][0], X.T[:][1], c=[colors[i] for i in y])
-plt.show()
 
-
-kmeans = KMeans(centers, n_retries=restarts)
+kmeans = KMeans(centers, n_retries=restarts, verbose=True)
 assignments, centroids = kmeans.fit_predict(X)
 
 nums = [argwhere(assignments, i, axis=1)[0] for i in range(X.shape[0])]
@@ -37,22 +35,23 @@ nums = [argwhere(assignments, i, axis=1)[0] for i in range(X.shape[0])]
 color_assignments = [nums[i] for i in range(X.shape[0])]
 
 s_score = kmeans.silhouette(X)
-print(s_score)
+
+print(s_score, "mine")
 s_score_2 = silhouette_score(X, np.array(color_assignments))
-print(s_score_2)
+print(s_score_2, "slearn")
 
 kmean_sk = clus.KMeans(centers)
 labels_sk = kmean_sk.fit_predict(X)
 
 
-
 fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+ax[0].scatter(centroids[:][:,0], centroids[:][:,1], marker = "P")
 ax[0].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in color_assignments])
 ax[0].set_title("utils.math.kmeans plot")
 ax[1].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_sk])
-ax[2].set_title("sklearn plot")#ax[1].scatter(X.T[:][0], X.T[:][1],
+ax[1].set_title("sklearn plot")#ax[1].scatter(X.T[:][0], X.T[:][1],
 ax[2].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in y])
 ax[2].set_title("true blobs")
