@@ -1,6 +1,6 @@
 import numpy as np
 from copy import deepcopy
-from utils.utils import argwhere
+from utils.utils import argwhere, timeit
 
 def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
     if X and w:
@@ -69,7 +69,8 @@ def center_scale(X: np.ndarray, axis: int = 0, verbose: bool = False) -> np.ndar
     if verbose:
         return (X - mean) / std, mean, std
     return (X - mean) / std
-    
+
+@timeit
 def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.ndarray:
     # center and scale the data 
     X = center_scale(X, axis)
@@ -99,9 +100,17 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
         Y[:,i] = np.dot(U, beta) # + mean
     return Y
 
+def kernel_PCA(X: np.ndarray, kernel:object) -> np.ndarray:
+    M = np.zeros(shape=(X.shape[1], X.shape[1]))
+    # Mij = K(xi, xj)
+
+def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float = 1e-1) -> np.ndarray | float:
+    if np.isscalar(X):
+        return np.exp(-l2(X, Y, squared=True) / np.square(epsilon))
+
 class KMeans():
     
-    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True) -> None:
+    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: str = "random") -> None:
         self.clusters = num_clusters
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         self.best_assignment = None
@@ -109,10 +118,21 @@ class KMeans():
         self.retries = n_retries
         self.verbose = verbose
         self.scale = scale
-        
-    def silhouette(self, X: np.ndarray) -> int:
-        pass
+        self.init_method = init_method
 
+    def initialize_centroids(self, X: np.ndarray) -> None:
+        self.centroids = np.zeros(shape=(self.clusters, X.shape[1]))
+        if self.init_method == "random":
+            for i in range(self.clusters):
+                self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) + np.mean(X, axis=0), loc = np.mean(X, axis=0))
+            self.last_centroids = np.zeros_like(self.centroids)
+        
+        elif self.init_method == "kmeans++":
+            self.centroids[0] = X[np.random.randint(X.shape[0])]
+            for i in range(self.clusters - 1):
+                pass
+
+    @timeit
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
         # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
         
@@ -128,11 +148,8 @@ class KMeans():
             self.centroid_assignment = [[] for _ in range(self.clusters)]
 
             #positions of centroids
-            self.centroids = np.zeros(shape=(self.clusters, X.shape[1]))
-            for i in range(self.clusters):
-                self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) + np.mean(X, axis=0), loc = np.mean(X, axis=0))
+            self.initialize_centroids(X)
 
-            self.last_centroids = np.zeros_like(self.centroids)
             counter = 0
             while counter <= 2:
                 while (self.centroids - self.last_centroids).any() != 0:
