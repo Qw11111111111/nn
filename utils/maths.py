@@ -97,7 +97,7 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
 
 class KMeans():
     
-    def __init__(self, num_clusters: int | None = None, n_retries: int = 1) -> None:
+    def __init__(self, num_clusters: int | None = None, n_retries: int = 10) -> None:
         self.clusters = num_clusters
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         self.best_assignment = None
@@ -137,6 +137,7 @@ class KMeans():
                 if len(cluster) < 1:
                     continue
                 total += np.sum([l2(self.centroids[i], X[point]) for point in cluster])
+            #print(total , minimum)
             if total < minimum:
                 minimum = total
                 self.best_assignment = self.centroid_assignment
@@ -161,7 +162,7 @@ class KMeans():
                     continue
                 # calculating the new coordinates via the mean of the associated points
                 try:
-                    self.centroids[i] = np.hstack([np.mean(X[datapoints][coord], axis=0) for coord in range(X.shape[1])])
+                    self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
                 except IndexError:
                     continue
         
