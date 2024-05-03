@@ -13,5 +13,13 @@ def argwhere(v: list | np.ndarray, val: str | float | int, axis: int = 0) -> int
                     return (i, j)
         
 
-def timeit(func):
-    pass
+def timeit(func: object) -> None:
+
+    def inner(*args, **kwargs) -> None:
+        start = perf_counter()
+        returned_values = func(*args, **kwargs)
+        end = perf_counter()
+        print(f"time taken by function {func.__name__}: {end - start}")
+        return returned_values
+    
+    return inner
