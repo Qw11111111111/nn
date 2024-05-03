@@ -1,3 +1,5 @@
+from typing import Literal
+import iniconfig
 import numpy as np
 from copy import deepcopy
 from utils.utils import argwhere, timeit
@@ -113,7 +115,7 @@ def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float
 
 class KMeans():
     
-    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: str = "random") -> None:
+    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: Literal["kmeans++", "random", "random_choice"] = "kmeans++") -> None:
         self.clusters = num_clusters
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         self.best_assignment = None
@@ -123,11 +125,15 @@ class KMeans():
         self.scale = scale
         self.init_method = init_method
 
-    def initialize_centroids(self, X: np.ndarray) -> None:
+    def _initialize_centroids(self, X: np.ndarray) -> None:
         self.centroids = np.zeros(shape=(self.clusters, X.shape[1]))
         if self.init_method == "random":
             for i in range(self.clusters):
-                self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) + np.mean(X, axis=0), loc = np.mean(X, axis=0))
+                self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) ** 2, loc = np.mean(X, axis=0))
+
+        elif self.init_method == "random_choice":
+            indices = np.random.randint(0, X.shape[0], size=self.centroids.shape[0])
+            self.centroids = X[indices]
         
         elif self.init_method == "kmeans++":
             self.centroids[0] = X[np.random.randint(X.shape[0])]
@@ -164,12 +170,12 @@ class KMeans():
             self.centroid_assignment = [[] for _ in range(self.clusters)]
 
             #positions of centroids
-            self.initialize_centroids(X)
+            self._initialize_centroids(X)
 
             counter = 0
             while counter <= 2:
                 while (self.centroids - self.last_centroids).any() != 0:
-                    self.update(X)
+                    self._update(X)
                 else:
                     counter += 1
         
@@ -188,7 +194,7 @@ class KMeans():
         # return a list of the clusters for each datpoint (and the positions of the centroids?)
         return self.best_assignment, self.best_centroids
 
-    def update(self, X: np.ndarray) -> None:
+    def _update(self, X: np.ndarray) -> None:
             # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
             self.centroid_assignment = [[] for _ in range(self.clusters)]
             for i, point in enumerate(X):
