@@ -100,9 +100,12 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
         Y[:,i] = np.dot(U, beta) # + mean
     return Y
 
-def kernel_PCA(X: np.ndarray, kernel:object) -> np.ndarray:
+def kernel_PCA(X: np.ndarray, kernel: object) -> np.ndarray:
     M = np.zeros(shape=(X.shape[1], X.shape[1]))
     # Mij = K(xi, xj)
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            M[i, j] = kernel(X[i][j], X[j][i]) #this is gonna raise indexerror...
 
 def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float = 1e-1) -> np.ndarray | float:
     if np.isscalar(X):
@@ -125,12 +128,25 @@ class KMeans():
         if self.init_method == "random":
             for i in range(self.clusters):
                 self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) + np.mean(X, axis=0), loc = np.mean(X, axis=0))
-            self.last_centroids = np.zeros_like(self.centroids)
         
         elif self.init_method == "kmeans++":
             self.centroids[0] = X[np.random.randint(X.shape[0])]
-            for i in range(self.clusters - 1):
-                pass
+            for i in range(1, self.centroids.shape[0]):
+                probs = np.zeros(shape = X.shape[0])
+                for j, point in enumerate(X):
+                    if np.sum([self.centroids[i] == point for i in range(self.centroids.shape[0])]):
+                        continue
+                    closest_centroid = self.centroids[np.argmin([l2(point, self.centroids[k]) if not self.centroids[k].all() == 0 else np.inf for k in range(self.centroids.shape[0])])]
+                    probs[j] = l2(point, closest_centroid)
+                probs /= np.sum(probs)
+                cumprobs = probs.cumsum()
+                random_number = np.random.random()
+                for index_, prob in enumerate(cumprobs):
+                    if random_number < prob:
+                        break
+                self.centroids[i] = X[index_]
+        
+        self.last_centroids = np.zeros_like(self.centroids)
 
     @timeit
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
@@ -142,7 +158,7 @@ class KMeans():
             X, mean, std = center_scale(X, verbose = True) 
         
         # initialize centroids randomly
-        #list of datapoints
+        # list of datapoints
         minimum = np.inf
         for trial in range(self.retries):
             self.centroid_assignment = [[] for _ in range(self.clusters)]
