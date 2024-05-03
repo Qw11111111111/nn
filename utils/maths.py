@@ -107,7 +107,7 @@ def kernel_PCA(X: np.ndarray, kernel: object) -> np.ndarray:
     # Mij = K(xi, xj)
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
-            M[i, j] = kernel(X[i][j], X[j][i]) #this is gonna raise indexerror...
+            M[i, j] = kernel(X[i][j], X[j][i]) #this is gonna raise an indexerror...
 
 def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float = 1e-1) -> np.ndarray | float:
     if np.isscalar(X):
@@ -115,15 +115,16 @@ def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float
 
 class KMeans():
     
-    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: Literal["kmeans++", "random", "random_choice"] = "kmeans++") -> None:
+    def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: Literal["kmeans++", "random", "random_choice"] = "kmeans++", max_clusters: int = 20, good_score: float = 0.7) -> None:
         self.clusters = num_clusters
-        self.centroid_assignment = [[] for _ in range(self.clusters)]
-        self.best_assignment = None
-        self.best_centroids = None
+        self.centroid_assignment = None
+        self.centroids = None
         self.retries = n_retries
         self.verbose = verbose
         self.scale = scale
         self.init_method = init_method
+        self.max_clusters = max_clusters
+        self.good_score = good_score
 
     def _initialize_centroids(self, X: np.ndarray) -> None:
         self.centroids = np.zeros(shape=(self.clusters, X.shape[1]))
@@ -163,6 +164,43 @@ class KMeans():
         if self.scale:
             X, mean, std = center_scale(X, verbose = True) 
         
+        if self.clusters is None:
+            scores = np.zeros(shape=self.max_clusters)
+            minimum = -np.inf
+            for k in range(1, self.max_clusters):
+                self.clusters = k
+                scores[k] = self._fit(X, get_score = True)
+                if scores[k] > minimum:
+                    best_centroids, best_assignments = self.centroids, self.centroid_assignment
+                    minimum = scores[k]
+                if scores[k] >= self.good_score:
+                    break
+            self.centroids, self.centroid_assignment = best_centroids, best_assignments
+        else:
+            self._fit(X)
+        
+        return self.centroid_assignment, self.centroids
+
+    def _update(self, X: np.ndarray) -> None:
+            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+            self.centroid_assignment = [[] for _ in range(self.clusters)]
+            for i, point in enumerate(X):
+                best = np.argmin([l2(point, centroid) for j, centroid in enumerate(self.centroids)])
+                self.centroid_assignment[best].append(i)
+            
+            # update the centroids using the average of all points assigned to it as a new centroid
+            self.last_centroids = self.centroids
+            for i, centroid in enumerate(self.centroids):
+                datapoints = self.centroid_assignment[i]
+                if len(datapoints) == 0:
+                    continue
+                # calculating the new coordinates via the mean of the associated points
+                try:
+                    self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
+                except IndexError:
+                    continue
+    
+    def _fit(self, X: np.ndarray, get_score: bool = False) -> float | None:
         # initialize centroids randomly
         # list of datapoints
         minimum = np.inf
@@ -188,33 +226,21 @@ class KMeans():
                 print(f"Epoch: {trial} | current: {total:.3f} | min: {minimum:.3f}")
             if total < minimum:
                 minimum = total
-                self.best_assignment = deepcopy(self.centroid_assignment)
-                self.best_centroids = deepcopy(self.centroids)
+                best_assignment = deepcopy(self.centroid_assignment)
+                best_centroids = deepcopy(self.centroids)
 
         # return a list of the clusters for each datpoint (and the positions of the centroids?)
-        return self.best_assignment, self.best_centroids
-
-    def _update(self, X: np.ndarray) -> None:
-            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
-            self.centroid_assignment = [[] for _ in range(self.clusters)]
-            for i, point in enumerate(X):
-                best = np.argmin([l2(point, centroid) for j, centroid in enumerate(self.centroids)])
-                self.centroid_assignment[best].append(i)
-            
-            # update the centroids using the average of all points assigned to it as a new centroid
-            self.last_centroids = self.centroids
-            for i, centroid in enumerate(self.centroids):
-                datapoints = self.centroid_assignment[i]
-                if len(datapoints) == 0:
-                    continue
-                # calculating the new coordinates via the mean of the associated points
-                try:
-                    self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
-                except IndexError:
-                    continue
+        self.centroids, self.centroid_assignment = best_centroids, best_assignment
         
+        if get_score:
+            score = self.appr_silhouette(X)
+            return score
+
+
+    #@timeit
     def silhouette(self, X: np.ndarray, mean: bool = True) -> float | np.ndarray:
         """Calculate the Silhouette Coefficient for each sample. or the mean of it"""
+        # does not work. Use approximation instead
         #https://en.wikipedia.org/wiki/Silhouette_(clustering)
         silhouette_scores = np.zeros(shape=X.shape[0])
         for i, point in enumerate(X):
@@ -231,4 +257,16 @@ class KMeans():
                 if b < minimum:
                     minimum = b
             silhouette_scores[i] = (minimum - a) / (np.amax([a, minimum])) if len(self.centroid_assignment[assignment]) > 1 else 0
+        return np.mean(silhouette_scores) if mean else silhouette_scores
+    
+    #@timeit
+    def appr_silhouette(self, X: np.ndarray, mean: bool = True) -> float | np.ndarray:
+        """Apply the Silhouette method on an unsupervised learning model."""
+        silhouette_scores = np.zeros(shape=X.shape[0])
+        for i, point in enumerate(X):
+            minimum = np.inf
+            assignment = argwhere(self.centroid_assignment, i, axis=1)[0]
+            a = l2(point, self.centroids[assignment])
+            b = np.min([l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(self.centroids)])
+            silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1
         return np.mean(silhouette_scores) if mean else silhouette_scores
