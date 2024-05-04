@@ -1,4 +1,4 @@
-from utils.maths import l2, center_scale
+from utils.maths import l2, center_scale, mean_of_cluster
 from typing import Literal
 import numpy as np
 from copy import deepcopy
@@ -39,26 +39,24 @@ class KMeans():
                 probs /= np.sum(probs)
                 cumprobs = probs.cumsum()
                 random_number = np.random.random()
-                for index_, prob in enumerate(cumprobs):
+                for index, prob in enumerate(cumprobs):
                     if random_number < prob:
                         break
-                self.centroids[i] = X[index_]
+                self.centroids[i] = X[index]
         
         self.last_centroids = np.zeros_like(self.centroids)
 
     @timeit
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
-        # if self.clusters is None: find  the optimal number of clusters. Need to read up on this.
-        
         # center and scale the data if needed
         # care: the returned centroid positions will be centered and scaled. If you want to plot these center the data before fitting or set scale to False
         if self.scale:
             X, mean, std = center_scale(X, verbose = True) 
         
         if self.clusters is None:
-            scores = np.zeros(shape=self.max_clusters)
+            scores = np.zeros(shape=self.max_clusters + 1)
             minimum = -np.inf
-            for k in range(1, self.max_clusters):
+            for k in range(1, self.max_clusters + 1):
                 self.clusters = k
                 scores[k] = self._fit(X, get_score = True)
                 if scores[k] > minimum:
@@ -69,10 +67,34 @@ class KMeans():
             self.centroids, self.centroid_assignment = best_centroids, best_assignments
         else:
             self._fit(X)
-        
+        self._update_partitions(X)
         return self.centroid_assignment, self.centroids
 
+    def _update_centroids(self, X: np.ndarray) -> None:
+        self.last_centroids = self.centroids
+        for i, centroid in enumerate(self.centroids):
+            datapoints = self.centroid_assignment[i]
+            if len(datapoints) == 0:
+                continue
+            # calculating the new coordinates via the mean of the associated points
+            try:
+                self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
+            except IndexError:
+                continue
+
+    def _update_partitions(self, X: np.ndarray) -> None:
+        # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
+        self.centroid_assignment = [[] for _ in range(self.clusters)]
+        for i, point in enumerate(X):
+            best = np.argmin([l2(point, centroid) for j, centroid in enumerate(self.centroids)])
+            self.centroid_assignment[best].append(i)
+
     def _update(self, X: np.ndarray) -> None:
+            
+            self._update_partitions(X)
+            self._update_centroids(X)
+            return
+
             # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
             self.centroid_assignment = [[] for _ in range(self.clusters)]
             for i, point in enumerate(X):
@@ -158,6 +180,85 @@ class KMeans():
             assignment = argwhere(self.centroid_assignment, i, axis=1)[0]
             a = l2(point, self.centroids[assignment])
             b = np.min([l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(self.centroids)])
-            silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1
+            try:
+                silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1 if np.amax([a, b]) != np.inf else 0 if np.amax([a, b]) != np.nan else 0.5 #this still raises and shows a runtime warning. Need to fix
+            except RuntimeWarning:
+                silhouette_scores[i] = 1 if np.amax([a, b]) == 0 else 0
         return np.mean(silhouette_scores) if mean else silhouette_scores
+
+class AgglomerativeClusterer():
+
+    def __init__(self, clusters: int = 2, distance: object = l2, measurement: object = mean_of_cluster) -> None:
+        self.prox_matrix = None
+        self.distance = distance
+        self.measurement = measurement
+        self.clusters = []
+        self.original = []
+        self.matrix = []
+        self.n_clusters = clusters
+    
+    @timeit
+    def fit_predict(self, X: np.ndarray) -> np.ndarray:
+        data = X
+        self.original = X
+        self.clusters = [[i] for i in range(data.shape[0])]
+        self.prox_matrix = np.zeros(shape=(X.shape[0], X.shape[0]))
+        while len(self.clusters) > self.n_clusters:
+            minimum = np.inf
+            for i, cluster_1 in enumerate(self.clusters):
+                for j, cluster_2 in enumerate(self.clusters):
+                    if i == j:
+                        continue
+                    distance = self.distance(self.measurement(data[cluster_1]), self.measurement(data[cluster_2]))
+                    if distance < minimum:
+                        minimum = distance
+                        best = (i, j)
+            #self._update_prox_matrix(best)
+            self._update_clusters(best)
+        return self.clusters
+
+    def _update_clusters(self, pair: tuple) -> None:
+        # the cluster will always be shifted to the index of its member with the smallest index and this member will alway be the first -> can be used as reference
+        placeholder = [[] for _ in range(len(self.clusters) - 1)]
+        for i, cluster_1 in enumerate(self.clusters):
+            if i not in pair:
+                if i >= pair[1]:
+                    placeholder[i - 1] = cluster_1
+                else:
+                    placeholder[i] = cluster_1
+            else:
+                if i == pair[0]:
+                    placeholder[i] = cluster_1 + self.clusters[pair[1]]
+        self.clusters = placeholder
+
+    def _update_prox_matrix(self, pair: tuple) -> None:
+        cluster_1, cluster_2 = self.clusters[pair[0]], self.clusters[pair[1]]
+        for i, point_1 in enumerate(cluster_1):
+            for j, point_2 in enumerate(cluster_2):
+                self.prox_matrix[point_1][point_2] = np.max((len(cluster_1), len(cluster_2)))
+        
+    def transform_prox_matrix(self, depth: int) -> list[set[int]]:
+        """work in progress"""
+        self.clusters_at_depth = []
+        prox_matrix = self.prox_matrix
+        for i, row in enumerate(prox_matrix):
+            for j, number in enumerate(row):
+                if number <= depth:
+                    self.clusters_at_depth.append(set([j, i]))
+                    #self.clusters_at_depth[-1].update(i)
+                    prox_matrix[i][j], prox_matrix[j][i] = np.inf, np.inf
+                    self._get_numbers(prox_matrix, i, j, depth)
+        return self.clusters_at_depth
+    
+    def _get_numbers(self, prox_matrix: np.ndarray, row: int, col: int, depth: int) -> None:
+        for i, num in enumerate(prox_matrix[row]):
+            if num <= depth:
+                self.clusters_at_depth[-1].update([i])
+                prox_matrix[row][i], prox_matrix[i][row] = np.inf, np.inf
+                self._get_numbers(prox_matrix, row, i, depth)
+        for i, num in enumerate(prox_matrix.T[col]):
+            if num <= depth:
+                self.clusters_at_depth[-1].update([i])
+                prox_matrix[col][i], prox_matrix[i][col] = np.inf, np.inf
+                self._get_numbers(prox_matrix.T, i, col, depth)
 

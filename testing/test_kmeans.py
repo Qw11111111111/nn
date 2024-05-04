@@ -1,20 +1,20 @@
 from sklearn.datasets import make_blobs
 from sklearn.metrics import silhouette_score
 import sklearn.cluster as clus
-from utils.maths import KMeans, center_scale
+from utils.maths import center_scale
+from algorithms.clustering import KMeans
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 from utils.utils import argwhere, timeit
 from random import randint
 
-#OMP_NUM_THREADS=1
 
-pareser =  argparse.ArgumentParser()
-pareser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
-pareser.add_argument("-r", "--restarts", action="store", type=int, default=1)
-pareser.add_argument("-v", "--verbose", action="store_true", default=False)
-args = pareser.parse_args()
+parser =  argparse.ArgumentParser()
+parser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
+parser.add_argument("-r", "--restarts", action="store", type=int, default=1)
+parser.add_argument("-v", "--verbose", action="store_true", default=False)
+args = parser.parse_args()
 
 centers = args.n_centers if args.n_centers > 0 else None
 restarts = args.restarts
@@ -71,15 +71,10 @@ ax[2].scatter(X.T[:][0], X.T[:][1],
 ax[2].set_title("utils.math.kmeans random choice plot")
 ax[3].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_sk])
-ax[3].set_title("sklearn plot")#ax[1].scatter(X.T[:][0], X.T[:][1],
+ax[3].set_title("sklearn plot")
 ax[4].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in y])
 ax[4].set_title("true blobs")
 fig.suptitle(f"Plots for Kmeans clustering with my and sklearn implementation")
 plt.show()
 
-
-
-"""plt.scatter(X.T[:][0], X.T[:][1], c=[colors[i] for i in color_assignments])
-plt.show()
-"""
