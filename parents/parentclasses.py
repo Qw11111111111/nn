@@ -1,4 +1,5 @@
 """The parent classes. These should not be called directly."""
+from socket import NI_NAMEREQD
 import numpy as np
 
 class Layer():
@@ -149,7 +150,7 @@ class optim():
     	
         FORWARD, NAMES = list(reversed(FORWARD)), list(reversed(NAMES))
 
-        loss = self.loss_model(pred=FORWARD[0], Y=Y, axis=0)
+        loss = self.loss_model(pred=FORWARD[0], Y=Y)
         
         if abs((self.prev_losses[-1] - loss)) < self.stop_val or loss > self.prev_losses[1] and self.prev_losses[1] > self.prev_losses[0]:
             pass
@@ -166,4 +167,13 @@ class optim():
         self.lr = kwargs["lr"]
         self.loss_model = kwargs["loss_model"]
 
+class Clusterer():
 
+    def __init__(self, clusters: int | None = None) -> None:
+        self.n_clusters = clusters
+
+    def fit_predict(self, X: np.ndarray) -> np.ndarray:
+        pass
+
+    def _update(self, X: np.ndarray) -> None:
+        pass
