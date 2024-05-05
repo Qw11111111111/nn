@@ -2,7 +2,7 @@ from sklearn.datasets import make_blobs
 from sklearn.metrics import silhouette_score
 import sklearn.cluster as clus
 from utils.maths import center_scale
-from algorithms.clustering import KMeans, AgglomerativeClusterer
+from algorithms.clustering import KMeans, AgglomerativeClusterer, DBScan
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +22,7 @@ true_centers = args.true_centers
 restarts = args.restarts
 verbose = args.verbose
 
-X, y, true_centroids = make_blobs(centers=centers if centers is not None else true_centers, n_samples=centers * 5 if centers is not None else 200, cluster_std=1, return_centers=True)
+X, y, true_centroids = make_blobs(centers=centers if centers is not None else true_centers, n_samples=centers * 10 if centers is not None else 20, cluster_std=1, return_centers=True)
 
 X, mean, std = center_scale(X, verbose=True)
 true_centroids = (true_centroids - mean) / std
@@ -44,6 +44,11 @@ print(centroids_r)
 
 agglo = AgglomerativeClusterer(clusters=centers if centers is not None else true_centers)
 prox = agglo.fit_predict(X)
+print(list(reversed(agglo.history)))
+
+dbscan = DBScan(centers if centers is not None else true_centers)
+color_assignments_db = dbscan.fit_predict(X)
+print(len(color_assignments_db))
 
 nums = [argwhere(assignments, i, axis=1)[0] for i in range(X.shape[0])]
 nums_r = [argwhere(assignments_r, i, axis=1)[0] for i in range(X.shape[0])]
@@ -53,7 +58,7 @@ nums_a = [argwhere(prox, i, axis=1)[0] for i in range(X.shape[0])]
 color_assignments = [nums[i] for i in range(X.shape[0])]
 color_assignments_r = [nums_r[i] for i in range(X.shape[0])] 
 color_assignments_rc = [nums_rc[i] for i in range(X.shape[0])] 
-color_assignments_ag = [nums_a[i] for i in range(X.shape[0])] 
+color_assignments_ag = [nums_a[i] for i in range(X.shape[0])]
 
 s_score = kmeans.appr_silhouette(X)
 s_score_2 = silhouette_score(X, np.array(color_assignments))
@@ -61,6 +66,7 @@ print(f"silhouette scores of kmeans++: my implementation | sklearn \n{f"{s_score
 
 kmean_sk = clus.KMeans(centers if centers is not None else 2, init="k-means++")
 labels_sk = kmean_sk.fit_predict(X)
+print(len(labels_sk))
 
 agglo_sk = clus.AgglomerativeClustering(centers)
 labels_agglom = agglo_sk.fit_predict(X)
@@ -89,7 +95,7 @@ ax[4].set_title("true blobs")
 fig.suptitle(f"Plots for Kmeans clustering with my and sklearn implementation")
 plt.show()
 
-fig, ax = plt.subplots(1, 3, figsize=(30, 5))
+fig, ax = plt.subplots(1, 4, figsize=(20, 5))
 ax[0].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_agglom])
 ax[0].set_title("sklearn agglo plot")
@@ -97,7 +103,10 @@ ax[1].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in color_assignments_ag])
 ax[1].set_title("my agglo plot")
 ax[2].scatter(X.T[:][0], X.T[:][1],
+            c=[colors[i] for i in color_assignments_db])
+ax[2].set_title("my dbscan plot")
+ax[3].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in y])
-ax[2].set_title("true blobs")
+ax[3].set_title("true blobs")
 fig.suptitle(f"Plots for Kmeans clustering with my and sklearn implementation")
 plt.show()
