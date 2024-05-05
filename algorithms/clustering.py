@@ -1,10 +1,12 @@
+from sklearn import neighbors
+from parents.parentclasses import Clusterer
 from utils.maths import l2, center_scale, mean_of_cluster
 from typing import Literal
 import numpy as np
 from copy import deepcopy
 from utils.utils import argwhere, timeit
 
-class KMeans():
+class KMeans(Clusterer):
     
     def __init__(self, num_clusters: int | None = None, n_retries: int = 10, verbose: bool = False, scale: bool = True, init_method: Literal["kmeans++", "random", "random_choice"] = "kmeans++", max_clusters: int = 20, good_score: float = 0.7) -> None:
         self.clusters = num_clusters
@@ -186,7 +188,7 @@ class KMeans():
                 silhouette_scores[i] = 1 if np.amax([a, b]) == 0 else 0
         return np.mean(silhouette_scores) if mean else silhouette_scores
 
-class AgglomerativeClusterer():
+class AgglomerativeClusterer(Clusterer):
 
     def __init__(self, clusters: int = 2, distance: object = l2, measurement: object = mean_of_cluster) -> None:
         self.prox_matrix = None
@@ -196,6 +198,7 @@ class AgglomerativeClusterer():
         self.original = []
         self.matrix = []
         self.n_clusters = clusters
+        self.history = []
     
     @timeit
     def fit_predict(self, X: np.ndarray) -> np.ndarray:
@@ -229,7 +232,9 @@ class AgglomerativeClusterer():
             else:
                 if i == pair[0]:
                     placeholder[i] = cluster_1 + self.clusters[pair[1]]
+                    next_index = i
         self.clusters = placeholder
+        self.history.append(next_index)
 
     def _update_prox_matrix(self, pair: tuple) -> None:
         cluster_1, cluster_2 = self.clusters[pair[0]], self.clusters[pair[1]]
@@ -262,3 +267,62 @@ class AgglomerativeClusterer():
                 prox_matrix[col][i], prox_matrix[i][col] = np.inf, np.inf
                 self._get_numbers(prox_matrix.T, i, col, depth)
 
+class DBScan(Clusterer):
+    #https://de.wikipedia.org/wiki/DBSCAN
+
+    def __init__(self, clusters: int | None = None, min_pts: int = 3, epsilon: float = 3e-1) -> None:
+        super().__init__(clusters)
+        self.is_visited = set()
+        self.is_noise = set()
+        self.cluster_assignments = []
+        self.min_pts = min_pts
+        self.epsilon = epsilon
+
+    def fit_predict(self, X: np.ndarray) -> np.ndarray:
+        for i, point in enumerate(X):
+            if i in self.is_visited:
+                continue
+            self.is_visited.add(i)
+            neighbours = self._neighbours(X, point)
+            if len(neighbours) < self.min_pts:
+                self.is_noise.add(i)
+            else:
+                self.cluster_assignments.append(set())
+                self._expand_cluster(X, neighbours, i)
+
+        clusters = []
+        for i, point in enumerate(X):
+            count = 0
+            for j, cluster in enumerate(self.cluster_assignments):
+                if i in cluster:
+                    clusters.append(j)
+                elif i in self.is_noise:
+                    count += 1
+            if count == len(self.cluster_assignments):
+                clusters.append(-1)
+
+        return clusters
+    
+    def _expand_cluster(self, X: np.ndarray, neighbours: list[int], index: int) -> None:
+        self.cluster_assignments[-1].add(index)
+        i = 0
+        while len(set(neighbours) - self.is_visited) > 0:
+            point = neighbours[i]
+            if point in self.is_visited:
+                i += 1 
+                continue
+            self.is_visited.add(point)
+            neighbours_ = self._neighbours(X, X[point])
+            if len(neighbours_) >= self.min_pts:
+                neighbours += neighbours_
+            self.cluster_assignments[-1].add(point)
+            if point in self.is_noise:
+                self.is_noise.remove(point)
+            
+            i += 1
+
+    def _neighbours(self, X: np.ndarray, point: np.ndarray) -> list[int]:
+        distances = np.array([l2(point, point_2) for point_2 in X])
+        neighbours = distances <= self.epsilon
+        indices = np.arange(len(distances))[neighbours]
+        return list(indices)
