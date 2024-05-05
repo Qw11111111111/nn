@@ -1,6 +1,4 @@
-from typing import Literal
 import numpy as np
-from copy import deepcopy
 from utils.utils import argwhere, timeit
 
 def MSELoss(X: np.ndarray | int = None, Y: np.ndarray | int = None, w: np.ndarray | int = None, pred: np.ndarray | int = None, mode: str = "forward") -> float | np.ndarray:
@@ -112,4 +110,16 @@ def gaussian_kernel(X: np.ndarray | float, Y: np.ndarray | float, epsilon: float
     if np.isscalar(X):
         return np.exp(-l2(X, Y, squared=True) / np.square(epsilon))
 
+def mean_of_cluster(X) -> float:
+    return np.hstack([np.mean(X[:,coord], axis=0) for coord in range(X.shape[1])])
 
+@timeit
+def matmul(X, Y):
+    return np.matmul(X, Y)
+
+@timeit
+def dot(X, Y):
+    return np.dot(X, Y)
+
+def silhouette_score(X: np.ndarray, centroids: np.ndarray, partition: np.ndarray) -> float:
+    pass

@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from parents.parentclasses import Clusterer
+
 class Module:
     pass
 
@@ -93,3 +95,6 @@ def train_model(X: np.ndarray, Y: np.ndarray, model: Module, loss: Loss, optim: 
         plt.show()
 
     return model
+
+def fit_cluster(X: np.ndarray, model: Clusterer, centers: int | None = None, verbose: bool = False) -> Clusterer:
+    pass
