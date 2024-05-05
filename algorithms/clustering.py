@@ -1,4 +1,3 @@
-from sklearn import neighbors
 from parents.parentclasses import Clusterer
 from utils.maths import l2, center_scale, mean_of_cluster
 from typing import Literal
@@ -270,14 +269,15 @@ class AgglomerativeClusterer(Clusterer):
 class DBScan(Clusterer):
     #https://de.wikipedia.org/wiki/DBSCAN
 
-    def __init__(self, clusters: int | None = None, min_pts: int = 3, epsilon: float = 3e-1) -> None:
-        super().__init__(clusters)
+    def __init__(self, min_pts: int = 3, epsilon: float = 3e-1) -> None:
+        super().__init__()
         self.is_visited = set()
         self.is_noise = set()
         self.cluster_assignments = []
         self.min_pts = min_pts
         self.epsilon = epsilon
 
+    @timeit
     def fit_predict(self, X: np.ndarray) -> np.ndarray:
         for i, point in enumerate(X):
             if i in self.is_visited:
