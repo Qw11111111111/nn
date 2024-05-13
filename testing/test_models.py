@@ -1,7 +1,7 @@
 from neural_networks.loss import MSELoss
 from models.linear_regression import Linear_regressor
 from models.neural_nets import *
-from neural_networks.optims import GD, SGD
+from neural_networks.optims import GD, SGD, Momentum, ElasticNet
 from utils.training import CV, train_model, cv_models, cv_optims
 import matplotlib.pyplot as plt
 import argparse
@@ -24,12 +24,12 @@ torch_model = nn.Sequential(
 )
 
 model_4 = DeepNet(fit_intercept=True, rng = 42)
-model_4 = ShallowNet(fit_intercept=False, neurons=5, input_dim=1, rng = 42)
+model_4 = ShallowNet(fit_intercept=True, neurons=50, input_dim=1, rng = 42)
 #model_4 = DeepNet(fit_intercept=False, input_dim=1)
 #model_4 = Linear_regressor(input_dim=1, output_dim=1, rng=42, fit_intercept=False)
 #model_4 = VeryDeepModel(input_dim=1, rng=42, neurons=30, num_of_layers=5)
 #X_0 = np.array([np.linspace(i, 100, 10000) for i in range(13)])
-X_0 = np.linspace(-100, 100, 100)
+X_0 = np.linspace(-100, 100, 1000)
 #y_0 = np.sin(X_0)
 y_0 = 1 / 50 * np.square(X_0) + 10 * X_0 + np.random.normal(scale=10, size=len(X_0))
 y_true = 1 / 50 * np.square(X_0) + 10 * X_0
@@ -52,6 +52,8 @@ loss_ = MSELoss()
 optimizer = torch.optim.SGD(torch_model.parameters(), lr = args.learning_rate, momentum=args.alpha)
 loss_func = torch.nn.MSELoss()
 optimizer_deep = SGD(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, alpha=args.alpha, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
+optimizer_deep = Momentum(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, beta=args.alpha, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
+optimizer_deep = ElasticNet(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
 losses_4 = []
 
 for epoch in range(EPOCHS):
@@ -69,6 +71,8 @@ plt.plot(np.arange(len(losses_4)), losses_4)
 plt.legend(["deep net"])
 plt.grid(True)
 plt.show()
+
+model_4.reset()
 
 model_4 = train_model(X_0, y_0, model_4, loss_, optimizer_deep, EPOCHS, True, get_best=True)
 

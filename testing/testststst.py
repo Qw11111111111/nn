@@ -1,5 +1,6 @@
 from neural_networks.loss import MSELoss
 import numpy as np
+from utils.maths import matmul, dot
 
 dat = np.array([[1, 1, 2], [2, 3, 4], [1, 1, 2], [2, 3, 4]])
 dat2 = dat + 1
@@ -73,6 +74,28 @@ ar_1 = np.array(([1,2], [3, 4]))
 ar_2 = np.array(([[1, 2]]))
 print(ar_1.shape,  ar_2.shape)
 print(np.dot(ar_2, ar_1))
+
+alpha = 0.01
+X = np.array([[1,2,3], [-1,-2,-3]])
+
+print((pos := X > 0) - alpha * ~pos)
+X = np.array([[-10,2,3,4,5,60],[1,2,3,4,5,6]])
+Y = np.array([-10,2,3,4,5,60])
+print(np.array([np.exp(x) / np.sum(np.exp(x), axis=0) for x in X]))
+print(np.exp(Y) / np.sum(np.exp(Y), axis=0))
+which = np.diag(np.ones(shape=(X.shape[1])))
+print(~np.bool_(which))
+for x in X:
+    print(np.dot(np.array([[-x[i] * x[j] for j in range(len(x))] for i in range(len(x))]), ~np.bool_(which)))
+
+
+X = np.random.random(size=(20, 200, 10))
+Y = np.random.random(size=(20, 10, 200))
+D = dot(X, Y)
+print(D.shape)
+Z = matmul(X, Y)
+print(Z.shape)
+print(np.sum(Z - D))
 assert False
 zeros = np.zeros(array_.shape)
 print(np.amax([array_, zeros], axis = 0))

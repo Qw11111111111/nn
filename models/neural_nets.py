@@ -54,7 +54,7 @@ class MLP(Module):
         if layers is None:
             layers = [
                 linear.LinearLayer(input_dim, input_dim, fit_intercept, rng),
-                activations.ReLU(),
+                activations.ReLU(0),
                 linear.LinearLayer(input_dim, 200, fit_intercept, rng, 1),
                 activations.ReLU(1),
                 linear.LinearLayer(200, 200, fit_intercept, rng, 2),

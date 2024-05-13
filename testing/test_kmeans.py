@@ -15,12 +15,14 @@ parser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
 parser.add_argument("-N", "--true_centers", action="store", type=int, default=2)
 parser.add_argument("-r", "--restarts", action="store", type=int, default=1)
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
+parser.add_argument("-e", "--epsilon", action="store", type=float, default=4e-1)
 args = parser.parse_args()
 
 centers = args.n_centers if args.n_centers > 0 else None
 true_centers = args.true_centers
 restarts = args.restarts
 verbose = args.verbose
+epsilon = args.epsilon
 
 X, y, true_centroids = make_blobs(centers=centers if centers is not None else true_centers, n_samples=centers * 20 if centers is not None else 20 * true_centers, cluster_std=1, return_centers=True)
 
@@ -28,11 +30,11 @@ X, mean, std = center_scale(X, verbose=True)
 true_centroids = (true_centroids - mean) / std
 colors = []
 
-for i in range(10 + (centers if centers is not None else true_centers)):
+for i in range(20 + (centers if centers is not None else true_centers)):
     colors.append('#%06X' % randint(0, 0xFFFFFF))
 
 print("kmeans++")
-kmeans = KMeans(centers, n_retries=restarts, verbose=verbose, init_method="kmeans++", max_clusters=10, good_score=0.9)
+kmeans = KMeans(centers, n_retries=restarts, verbose=verbose, init_method="kmeans++", max_clusters=10, good_score=0.8, scale=False)
 assignments, centroids = kmeans.fit_predict(X)
 print(centroids)
 print("random_choice")
@@ -45,10 +47,11 @@ assignments_r, centroids_r = kmeans_random.fit_predict(X)
 print(centroids_r)
 print("agglo")
 agglo = AgglomerativeClusterer(clusters=centers if centers is not None else true_centers)
-prox = agglo.fit_predict(X)
+#prox = agglo.fit_predict(X)
+prox = assignments
 print(list(reversed(agglo.history)))
 print("dbscan")
-dbscan = DBScan(epsilon=4e-1)
+dbscan = DBScan(epsilon=epsilon)
 color_assignments_db = dbscan.fit_predict(X)
 print(len(color_assignments_db))
 print(color_assignments_db)
@@ -106,12 +109,20 @@ ax[1][0].set_title("my agglo")
 ax[1][1].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in color_assignments_db])
 ax[1][1].set_title("my dbscan")
+
+legend = np.array([i for i in range(len(colors))])
+ax[1][2].scatter(legend, np.zeros_like(legend),
+                 c = [colors[i] for i in range(len(colors))])
+ax[1][2].set_title("colors")
+
 ax[1][3].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_agglom])
 ax[1][3].set_title("sklearn agglo")
 ax[1][4].scatter(X.T[:][0], X.T[:][1],
             c=[colors[i] for i in labels_dbscn])
 ax[1][4].set_title("sklearn dbscan")
+
+
 
 fig.suptitle(f"Plots for Kmeans clustering with my and sklearn implementation")
 plt.show()

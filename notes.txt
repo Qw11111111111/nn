@@ -50,3 +50,7 @@ for each layer calculate dlayer/dweights = d_prev.T * input # sould be input.T *
                         --> for each activation layer calculate:
                                                             d_next = d_prv * diag(d_phi(input))
                                                 
+
+further notes:
+when handling tensors use np.matmul --> might need to rewrite most of the code, which is currently using np.dot
+performance wise both are equal

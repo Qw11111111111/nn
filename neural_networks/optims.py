@@ -2,6 +2,11 @@ import numpy as np
 from parents.parentclasses import optim, Loss, Module
 from utils.maths import l2, l1
 
+"""
+Currently the SGD optimizer can be used for stochastic gradient descent. Future: SGD needs to be implemented outside of the optimizer,
+as this allows for easier implementation of the various optimizers. Optionally SGD could just be the default for every optimizer.
+"""
+
 class SGD(optim):
 
     #TODO: optimize this process !!! (works, very slow for small batch size(naturally))
@@ -17,7 +22,6 @@ class SGD(optim):
             X_train, Y_train = X[i:i + self.batch_size], Y[i:i + self.batch_size]
             super().backpropagation(X_train, Y_train)
 
-
 class Adam(optim):
 
     #TODO
@@ -26,7 +30,7 @@ class Adam(optim):
         super().__init__()
 
     def backpropagation(self) -> None:
-        return super().backpropagation()
+        super().backpropagation()
     
 class Momentum(optim):
     
@@ -81,3 +85,12 @@ class ElasticNet(optim):
             layer.bias_grad = layer.bias_grad + self.ridge * l2(layer.bias, grad=True, squared=True) + self.lasso * l1(layer.bias, grad=True)
             layer.weight_grad = layer.weight_grad + self.ridge * l2(layer.weights, grad=True, squared=True) + self.lasso * l1(layer.weights, grad=True)
             layer.update_state_dict(-self.lr * layer.weight_grad, -self.lr * layer.bias_grad)
+
+class NesterovMomentum(optim):
+    
+    #TODO implement
+    def __init__(self, lr: float, model: Module, loss: Loss, stop_val: float = 0.0001, *args, **kwargs) -> None:
+        super().__init__(lr, model, loss, stop_val, *args, **kwargs)
+
+    def backpropagation(self, X: np.ndarray, Y: np.ndarray) -> None:
+        super().backpropagation(X, Y)
