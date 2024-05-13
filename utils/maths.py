@@ -100,6 +100,7 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     return Y
 
 def kernel_PCA(X: np.ndarray, kernel: object) -> np.ndarray:
+    #TODO: implement
     M = np.zeros(shape=(X.shape[1], X.shape[1]))
     # Mij = K(xi, xj)
     for i in range(M.shape[0]):
@@ -121,5 +122,18 @@ def matmul(X, Y):
 def dot(X, Y):
     return np.dot(X, Y)
 
-def silhouette_score(X: np.ndarray, centroids: np.ndarray, partition: np.ndarray) -> float:
-    pass
+@timeit
+def appr_silhouette(self, X: np.ndarray, centroids: np.ndarray, clusters: np.ndarray | list, mean: bool = True) -> float | np.ndarray:
+        """Apply the Silhouette method on an unsupervised learning model."""
+        silhouette_scores = np.zeros(shape=X.shape[0])
+        for i, point in enumerate(X):
+            minimum = np.inf
+            assignment = argwhere(clusters, i, axis=1)[0]
+            a = l2(point, centroids[assignment])
+            b = np.min([l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(centroids)])
+            try:
+                silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1 if np.amax([a, b]) != np.inf else 0 if np.amax([a, b]) != np.nan else 0.5 #this still raises and shows a runtime warning. Need to fix
+            except RuntimeWarning:
+                silhouette_scores[i] = 1 if np.amax([a, b]) == 0 else 0
+        return np.mean(silhouette_scores) if mean else silhouette_scores
+
