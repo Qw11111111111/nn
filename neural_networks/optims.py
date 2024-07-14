@@ -9,7 +9,7 @@ as this allows for easier implementation of the various optimizers. Optionally S
 
 class SGD(optim):
 
-    #TODO: optimize this process !!! (works, very slow for small batch size(naturally))
+    #TODO: optimize this process !!! (works, very slow for small batch size(naturally)) Also should try to make it possible to call SGD from different optims
 
     def __init__(self, model: Module, loss: Loss, batch_size: int = 1, momentum: bool = False, alpha: float = 0.01, lr: float = 1e-4, stop_val: float = 1e-5, normalization_rate: float = 1, *args, **kwargs) -> None:
         super().__init__(lr, model, loss, stop_val, momentum, alpha, *args, normalization_rate, **kwargs)
@@ -21,6 +21,8 @@ class SGD(optim):
         for i in range(int(len(X) / self.batch_size) - 1):
             X_train, Y_train = X[i:i + self.batch_size], Y[i:i + self.batch_size]
             super().backpropagation(X_train, Y_train)
+            for layer in self.model.layers:
+                layer.update_state_dict(-layer.weight_grad * self.lr, -layer.bias_grad * self.lr)
 
 class Adam(optim):
 

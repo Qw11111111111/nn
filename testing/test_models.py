@@ -11,10 +11,10 @@ from torch import nn
 torch.set_default_dtype(torch.float64)
 
 parser = argparse.ArgumentParser()  
-parser.add_argument("-l","--learning_rate", action="store", help="set the learning rate", default=1e-9, metavar="lr", type=float)
-parser.add_argument("-a", "--alpha", action="store", help="the alpha paramter for momentum", default=1, metavar="alpha", type=float)
-parser.add_argument("-b", "--batch_size", action="store", help="the batch size for SGD", default=10, metavar="B", type=int)
-parser.add_argument("-e", "--epochs", action="store", help="the number of epochs", default=500, metavar="E", type=int)
+parser.add_argument("-l","--learning_rate", action="store", help="set the learning rate", default=5e-12, metavar="lr", type=float)
+parser.add_argument("-a", "--alpha", action="store", help="the alpha paramter for momentum", default=0.9, metavar="alpha", type=float)
+parser.add_argument("-b", "--batch_size", action="store", help="the batch size for SGD", default=50, metavar="B", type=int)
+parser.add_argument("-e", "--epochs", action="store", help="the number of epochs", default=300, metavar="E", type=int)
 args = parser.parse_args()
 
 torch_model = nn.Sequential(
@@ -25,7 +25,8 @@ torch_model = nn.Sequential(
 
 model_4 = DeepNet(fit_intercept=True, rng = 42)
 model_4 = ShallowNet(fit_intercept=True, neurons=50, input_dim=1, rng = 42)
-#model_4 = DeepNet(fit_intercept=False, input_dim=1)
+#model_4 = Linear_regressor()
+model_4 = DeepNet(fit_intercept=False, input_dim=1)
 #model_4 = Linear_regressor(input_dim=1, output_dim=1, rng=42, fit_intercept=False)
 #model_4 = VeryDeepModel(input_dim=1, rng=42, neurons=30, num_of_layers=5)
 #X_0 = np.array([np.linspace(i, 100, 10000) for i in range(13)])
@@ -49,11 +50,11 @@ plt.show()
 
 EPOCHS = args.epochs
 loss_ = MSELoss()
-optimizer = torch.optim.SGD(torch_model.parameters(), lr = args.learning_rate, momentum=args.alpha)
+optimizer = torch.optim.SGD(torch_model.parameters(), lr=1e-6, momentum=args.alpha)
 loss_func = torch.nn.MSELoss()
 optimizer_deep = SGD(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, alpha=args.alpha, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
 optimizer_deep = Momentum(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, beta=args.alpha, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
-optimizer_deep = ElasticNet(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
+#optimizer_deep = ElasticNet(lr=args.learning_rate, model=model_4, loss=loss_, batch_size=args.batch_size, momentum=True, normalization_rate=1, stop_val=1, kwargs={"dropout": False})
 losses_4 = []
 
 for epoch in range(EPOCHS):
@@ -69,6 +70,14 @@ for epoch in range(EPOCHS):
 
 plt.plot(np.arange(len(losses_4)), losses_4)
 plt.legend(["deep net"])
+plt.grid(True)
+plt.show()
+
+plt.plot(X_0, y_true)
+plt.plot(X_0, y_0)
+plt.plot(X_0, model_4.forward(X_0))
+plt.plot(X_0, torch_model.forward(torch.from_numpy(X_0)).detach().numpy())
+plt.legend(["truth", "data", "deep net", "torch"])
 plt.grid(True)
 plt.show()
 

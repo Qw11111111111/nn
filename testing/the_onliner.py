@@ -95,7 +95,6 @@ def one_line_expanded():
     ]
 ]"""
 
-
 @timeit
 def one_line_expanded_ultimate():
     return [

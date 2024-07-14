@@ -7,6 +7,32 @@ import torch
 from torch import nn
 torch.set_default_dtype(torch.float64)
 
+
+
+
+
+# the onliner:
+"""model = nn.Sequential(nn.Linear(1,1,False), nn.ReLU(), nn.Linear(1,1,False))
+crit = nn.MSELoss()
+optimizer = torch.optim.SGD(model.parameters(), 1e-5)
+X = 100
+#done
+for ep in 10:
+    pred = model(X)
+    loss = crit(pred)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()"""
+
+(train := lambda model, crit, optimizer, X, y: [(zero := lambda optimizer: optimizer.zero_grad())(optimizer)(get_loss := lambda model, X: crit(model(X), y).backward())(model, X, y)(step := lambda optimizer: optimizer.step())(optimizer) for ep in range(10)])(model := nn.Sequential(nn.Linear(1,1,False), nn.ReLU(), nn.Linear(1,1,False)), nn.MSELoss(), torch.optim.SGD(model.parameters(), 1e-5), torch.tensor([100, 200, 300]), torch.tensor([1, 2, 3]))
+
+
+
+
+
+
+
+
 class Linear_Regression_model(nn.Module):
     def __init__(self):
         
@@ -38,7 +64,7 @@ plt.show()
 
 EPOCHS = 2000
 criterion =  nn.MSELoss()
-optimizer_2 = torch.optim.Adam(params=model_3.parameters(), lr=1e-4)
+optimizer_2 = torch.optim.Adam(params=model_3.parameters(), lr=1e-7)
 loss = MSELoss()
 optimizer = GD(lr=3e-3, model = model, loss = loss)
 optimizer_deep = GD(lr=3e-6, model=model_4, loss=loss)
@@ -59,7 +85,7 @@ for epoch in range(EPOCHS):
     losses_3.append(_loss.detach().numpy())
     losses_2.append(model_2.get_loss(X[TRAIN_SPLIT:].reshape((X[TRAIN_SPLIT:].shape[0], -1)), y[TRAIN_SPLIT:].reshape((y[TRAIN_SPLIT:].shape[0], -1))))
     optimizer.backpropagation(X_train, y_train)
-    print(model.get_state_dict())
+    #print(model.get_state_dict())
     #optimizer_deep.backpropagation(X_train[i], y_train[i])
     losses.append(loss(Y=y[TRAIN_SPLIT:].reshape((y[TRAIN_SPLIT:].shape[0], -1)), pred=model.forward(X[TRAIN_SPLIT:].reshape((X[TRAIN_SPLIT:].shape[0], -1)))))
     losses_4.append(loss(Y=y[TRAIN_SPLIT:].reshape((y[TRAIN_SPLIT:].shape[0], -1)), pred=model_4.forward(X[TRAIN_SPLIT:].reshape((X[TRAIN_SPLIT:].shape[0], -1)))))

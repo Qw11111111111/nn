@@ -19,6 +19,7 @@ class ReLU(Layer):
         if len(X.shape) < 2:
             X = X.reshape((X.shape[0], 1))
         # assuming n > dim
+        assert X.shape[0] >= X.shape[1], "dimension should be smaller than number of datapoints"
         return np.dot(prev, diagonal(X > 0, is_diagonalizable=True))
 
     def __str__(self) -> str:

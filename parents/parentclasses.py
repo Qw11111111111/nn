@@ -1,5 +1,4 @@
 """The parent classes. These should not be called directly."""
-from socket import NI_NAMEREQD
 import numpy as np
 
 class Layer():

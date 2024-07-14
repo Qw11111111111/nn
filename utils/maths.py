@@ -74,8 +74,8 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     # center and scale the data 
     X = center_scale(X, axis)
     U, S, V = np.linalg.svd(X)
-    S = np.diag(S)
     # truncate the result
+    #S = np.diag(S) should be done after pivot search i think
     if n_components is None:
         # find optimal split https://stackoverflow.com/questions/4471993/compute-the-elbow-for-a-curve-automatically-and-mathematically
         # i belive that this does not currently work correctly
@@ -86,7 +86,7 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     #default to 1 if auto calculates something false
     if pivot < 1:
         pivot = 1
-
+    S = np.diag(S)
     # generate the truncated SVD
     S = S[:pivot][:pivot]
     U = U[:, :pivot]    
