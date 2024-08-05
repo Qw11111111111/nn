@@ -3,7 +3,7 @@ from utils.maths import l2, center_scale, mean_of_cluster
 from typing import Literal
 import numpy as np
 from copy import deepcopy
-from utils.utils import argwhere, timeit
+from utils.utils import argwhere, timeit, unique_nums
 
 class KMeans(Clusterer):
     
@@ -25,7 +25,8 @@ class KMeans(Clusterer):
                 self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) ** 2, loc = np.mean(X, axis=0))
 
         elif self.init_method == "random_choice":
-            indices = np.random.randint(0, X.shape[0], size=self.centroids.shape[0])
+            while not unique_nums(indices := np.random.randint(0, X.shape[0], size=self.centroids.shape[0])):
+                pass
             self.centroids = X[indices]
         
         elif self.init_method == "kmeans++":
@@ -46,6 +47,7 @@ class KMeans(Clusterer):
                 self.centroids[i] = X[index]
         
         self.last_centroids = np.zeros_like(self.centroids)
+        self.initial_centroids = deepcopy(self.centroids)
 
     @timeit
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
@@ -61,27 +63,27 @@ class KMeans(Clusterer):
                 self.clusters = k
                 scores[k] = self._fit(X, get_score = True)
                 if scores[k] > minimum:
-                    best_centroids, best_assignments = self.centroids, self.centroid_assignment
+                    best_centroids, best_assignments, best_initial_centroids = deepcopy(self.centroids), deepcopy(self.centroid_assignment), deepcopy(self.initial_centroids)
                     minimum = scores[k]
                 if scores[k] >= self.good_score:
                     break
-            self.centroids, self.centroid_assignment = best_centroids, best_assignments
+            self.centroids, self.centroid_assignment, self.best_initial_centroids = best_centroids, best_assignments, best_initial_centroids
         else:
             self._fit(X)
         self._update_partitions(X)
         return self.centroid_assignment, self.centroids
 
     def _update_centroids(self, X: np.ndarray) -> None:
-        self.last_centroids = self.centroids
+        self.last_centroids = deepcopy(self.centroids)
         for i, centroid in enumerate(self.centroids):
             datapoints = self.centroid_assignment[i]
             if len(datapoints) == 0:
                 continue
             # calculating the new coordinates via the mean of the associated points
-            try:
-                self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
-            except IndexError:
-                continue
+            #try:
+            self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
+            #except IndexError:
+                #continue
 
     def _update_partitions(self, X: np.ndarray) -> None:
         # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
@@ -142,9 +144,10 @@ class KMeans(Clusterer):
                 minimum = total
                 best_assignment = deepcopy(self.centroid_assignment)
                 best_centroids = deepcopy(self.centroids)
+                best_initial_centroids = deepcopy(self.initial_centroids)
 
         # return a list of the clusters for each datpoint (and the positions of the centroids?)
-        self.centroids, self.centroid_assignment = best_centroids, best_assignment
+        self.centroids, self.centroid_assignment, self.initial_centroids = best_centroids, best_assignment, best_initial_centroids
         
         if get_score:
             score = self.appr_silhouette(X)
