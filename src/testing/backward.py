@@ -4,13 +4,12 @@ from loss.loss import MSELoss
 from layers.layers import LinearLayer
 from models.linear import LinearRegression
 import numpy as np
-
 import matplotlib.pyplot as plt
 
 array_ = jnp.arange(10.)
 
 def dot(arr1):
-    return jnp.square(arr1)
+  return jnp.square(arr1)
 
 array_ = dot(array_)
 print(array_)
@@ -66,17 +65,17 @@ grad_2 = linlay.backward(1.)
 print(grad_2)
 
 
-model = LinearLayer((1, 1), True)
+model = LinearLayer((1, 1), False)
 #model.weights = -model.weights if model.weights[0] > 0 else model.weights
 criterion = MSELoss()
 
-model2 = LinearRegression((1, 1), True)
+model2 = LinearRegression((1, 1), False)
 
 X = jnp.arange(50.).reshape((-1, 1))
 
 Y = jnp.arange(50.) * 2
 
-Y += np.random.normal(0., 2., Y.shape) + 42
+Y += np.random.normal(0., 2., Y.shape) + 0
 Y = Y.reshape((-1, 1))
 
 print(X.shape, Y.shape)
@@ -110,17 +109,18 @@ for i in range(200):
   #print("pred",d_pred.shape)
   #print(d_pred)
   #print("err", d_error.shape)
-  d_w, d_b = jnp.average(d_pred[0], axis = 0), jnp.average(d_pred[1], axis = 0)
+  ###d_w, d_b = jnp.average(d_pred[0], axis = 0), jnp.average(d_pred[1], axis = 0)
   #print(d_error.shape)
   #print("w, b",d_w.shape, d_b.shape)
   #print("w",d_w,"b", d_b)
   #assert False
   #print(d_w[0][0].reshape((-1, 1)).shape)
   #print("weights", model.weights.shape)
-  model.weights -= 1e-3 * jnp.dot(d_error, d_w).T
+  ###model.weights -= 1e-3 * jnp.dot(d_error, d_w).T
   #print("weights", model.weights.shape)
   #assert False
-  #model.weights -= 5e-3 * jnp.average(d_error) + 1e-1 * last
+  
+  model.weights -= 5e-3 * jnp.average(jnp.dot(d_error, d_pred)).reshape(model.weights.shape) + 1e-1 * last
   #model.bias -= 1e-3 * jnp.dot(d_error, jnp.average(d_b)) + 0 * last
   #last = 5e-2 * jnp.average(d_error)
   if i > 4  and errors[-1] > errors[-2] and errors[-1] > errors[-3]:
@@ -137,7 +137,7 @@ print("bias: ", model.bias)
 pred = model(X)
 pred2 = model2(X)
 plt.plot(X_p, Y)
+plt.plot(X_p, pred)
 plt.plot(X_p, pred2)
-plt.plot(X_p, Y)
 plt.legend(["truth", "pred", "pred2"])
 plt.show()

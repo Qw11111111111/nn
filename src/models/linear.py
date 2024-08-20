@@ -45,7 +45,6 @@ class LinearRegression(Module):
             last_err = err
             last_update = update
 
-
     def initialize(self) -> None:
         self.layer.initialize()
     

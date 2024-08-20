@@ -9,7 +9,7 @@ class Layer(ABC):
         pass
     
     @abstractmethod
-    def __call__(self, X: jnp.ndarray, *args: Any, **kwds: Any) -> jnp.ndarray:
+    def __call__(self, X: jnp.ndarray, *args: Any, **kwargs: Any) -> jnp.ndarray:
         pass
     
     @abstractmethod
