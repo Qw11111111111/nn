@@ -1,8 +1,8 @@
-from parents.layer import Layer
-from layers.layers import LinearLayer, ReLU
-from parents.module import Module
-from parents.loss import Loss
-from parents.optim import Optim
+from src.parents import Layer
+from src import LinearLayer, ReLU
+from src.parents import Module
+from src.parents import Loss
+from src.parents import Optim
 import jax.numpy as jnp
 import jax
 import numpy as np

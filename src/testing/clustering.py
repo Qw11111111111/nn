@@ -1,4 +1,4 @@
-from unsupervised.clustering import kmeans, agglomerative, dbscan
+#from src import clustering
 import jax.numpy as jnp
 import numpy as np
 import matplotlib.pyplot as plt

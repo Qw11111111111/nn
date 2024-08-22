@@ -4,7 +4,7 @@ from jax.numpy import ndarray
 import jax.random as jrd
 import jax
 from numpy import random
-from parents.layer import Layer
+from src.parents import Layer
 
 class LinearLayer(Layer):
 

@@ -1,5 +1,5 @@
 from typing import Any
-from abc import abstractmethod, classmethod, ABC
+from abc import abstractmethod, ABC
 import jax.numpy as jnp
 
 class Clusterer(ABC):

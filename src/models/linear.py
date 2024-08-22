@@ -2,10 +2,10 @@ import jax.numpy as jnp
 import jax
 import numpy as np
 from typing import Any
-from parents.module import Module
-from parents.loss import Loss
-from parents.optim import Optim
-from layers.layers import LinearLayer
+from src.parents.module import Module
+from src.parents.loss import Loss
+from src.parents.optim import Optim
+from src import LinearLayer
 
 class LinearRegression(Module):
 

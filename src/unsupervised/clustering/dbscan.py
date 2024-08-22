@@ -1,7 +1,7 @@
-from parents.clusterer import Clusterer
+from src.parents import Clusterer
 import numpy as np
-from utils.utils import timeit
-from maths.math import l2
+from src.utils import timeit
+from src.maths import l2
 
 class DBScan(Clusterer):
     #https://de.wikipedia.org/wiki/DBSCAN

@@ -1,8 +1,6 @@
 from typing import Any
 from abc import ABC, abstractmethod
 import jax.numpy as jnp
-from parents.optim import Optim
-from parents.loss import Loss
 
 class Module(ABC):
 
@@ -18,7 +16,8 @@ class Module(ABC):
     def __str__(self) -> str:
         pass
 
-    def fit(self, optim: Optim, criterion: Loss, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> None:
+    def fit(self, criterion, X: jnp.ndarray, Y: jnp.ndarray, optim, *args: Any, **kwargs: Any) -> None:
+        
         pass
 
     def initialize(self) -> None:

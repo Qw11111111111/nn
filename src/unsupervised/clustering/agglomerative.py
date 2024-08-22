@@ -1,8 +1,8 @@
-from parents.clusterer import Clusterer
+from src.parents import Clusterer
 import numpy as np
 import jax.numpy as jnp
-from maths.math import l2, center_scale, mean_of_cluster
-from utils.utils import timeit
+from src.maths import l2, center_scale, mean_of_cluster
+from src.utils import timeit
 
 class AgglomerativeClusterer(Clusterer):
 

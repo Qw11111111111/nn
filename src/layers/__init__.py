@@ -1,5 +1,6 @@
-from loss import *
-from maths import *
-from optims import *
-from testing import *
-from utils import *
+from src.layers.layers import LinearLayer, ReLU
+
+__all__ = [
+    "LinearLayer",
+    "ReLU"
+]

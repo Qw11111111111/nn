@@ -1,10 +1,9 @@
 from copy import deepcopy
-from parents.clusterer import Clusterer
+from src.parents import Clusterer
 import jax.numpy as jnp
 import numpy as np
-from maths.math import l2, center_scale
-from utils.helper import unique_nums, argwhere
-from utils.utils import timeit
+from src import maths as m
+from src import utils as u
 from typing import Literal
 
 
@@ -28,7 +27,7 @@ class KMeans(Clusterer):
                 self.centroids[i] += np.random.normal(scale = np.std(X, axis=0) ** 2, loc = np.mean(X, axis=0))
 
         elif self.init_method == "random_choice":
-            while not unique_nums(indices := np.random.randint(0, X.shape[0], size=self.centroids.shape[0])):
+            while not u.unique_nums(indices := np.random.randint(0, X.shape[0], size=self.centroids.shape[0])):
                 pass
             self.centroids = X[indices]
         
@@ -39,8 +38,8 @@ class KMeans(Clusterer):
                 for j, point in enumerate(X):
                     if np.sum([self.centroids[i] == point for i in range(self.centroids.shape[0])]):
                         continue
-                    closest_centroid = self.centroids[np.argmin([l2(point, self.centroids[k]) if not self.centroids[k].all() == 0 else np.inf for k in range(self.centroids.shape[0])])]
-                    probs[j] = l2(point, closest_centroid)
+                    closest_centroid = self.centroids[np.argmin([m.l2(point, self.centroids[k]) if not self.centroids[k].all() == 0 else np.inf for k in range(self.centroids.shape[0])])]
+                    probs[j] = m.l2(point, closest_centroid)
                 probs /= np.sum(probs)
                 cumprobs = probs.cumsum()
                 random_number = np.random.random()
@@ -52,12 +51,12 @@ class KMeans(Clusterer):
         self.last_centroids = np.zeros_like(self.centroids)
         self.initial_centroids = deepcopy(self.centroids)
 
-    @timeit
+    @u.timeit
     def fit_predict(self, X: np.ndarray) -> list[int | np.ndarray]:
         # center and scale the data if needed
         # care: the returned centroid positions will be centered and scaled. If you want to plot these center the data before fitting or set scale to False
         if self.scale:
-            X, mean, std = center_scale(X, verbose = True) 
+            X, mean, std = m.center_scale(X, verbose = True) 
         
         if self.clusters is None:
             scores = np.zeros(shape=self.max_clusters + 1)
@@ -91,7 +90,7 @@ class KMeans(Clusterer):
         # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
         self.centroid_assignment = [[] for _ in range(self.clusters)]
         for i, point in enumerate(X):
-            best = np.argmin([l2(point, centroid) for j, centroid in enumerate(self.centroids)])
+            best = np.argmin([m.l2(point, centroid) for j, centroid in enumerate(self.centroids)])
             self.centroid_assignment[best].append(i)
 
     def _update(self, X: np.ndarray) -> None:
@@ -139,7 +138,7 @@ class KMeans(Clusterer):
             for i, cluster in enumerate(self.centroid_assignment):
                 if len(cluster) < 1:
                     continue
-                total += np.sum([l2(self.centroids[i], X[point]) for point in cluster])
+                total += np.sum([m.l2(self.centroids[i], X[point]) for point in cluster])
             if self.verbose:
                 print(f"Epoch: {trial} | current: {total:.3f} | min: {minimum:.3f}")
             if total < minimum:
@@ -164,14 +163,14 @@ class KMeans(Clusterer):
         for i, point in enumerate(X):
             a = 0
             minimum = np.inf
-            assignment = argwhere(self.centroid_assignment, i, axis=1)[0]
+            assignment = u.argwhere(self.centroid_assignment, i, axis=1)[0]
             for j, cluster in enumerate(self.centroid_assignment):
                 if len(self.centroid_assignment[assignment]) <= 1:
                     continue
                 b = 0
                 if j == assignment:
-                    a += np.mean([l2(point, X[datapoint]) if datapoint != i else 0 for datapoint in cluster])
-                b += np.mean([l2(point, X[datapoint]) for datapoint in cluster])
+                    a += np.mean([m.l2(point, X[datapoint]) if datapoint != i else 0 for datapoint in cluster])
+                b += np.mean([m.l2(point, X[datapoint]) for datapoint in cluster])
                 if b < minimum:
                     minimum = b
             silhouette_scores[i] = (minimum - a) / (np.amax([a, minimum])) if len(self.centroid_assignment[assignment]) > 1 else 0
@@ -183,9 +182,9 @@ class KMeans(Clusterer):
         silhouette_scores = np.zeros(shape=X.shape[0])
         for i, point in enumerate(X):
             minimum = np.inf
-            assignment = argwhere(self.centroid_assignment, i, axis=1)[0]
-            a = l2(point, self.centroids[assignment])
-            b = np.min([l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(self.centroids)])
+            assignment = u.argwhere(self.centroid_assignment, i, axis=1)[0]
+            a = m.l2(point, self.centroids[assignment])
+            b = np.min([m.l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(self.centroids)])
             try:
                 silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1 if np.amax([a, b]) != np.inf else 0 if np.amax([a, b]) != np.nan else 0.5 #this still raises and shows a runtime warning. Need to fix
             except RuntimeWarning:
