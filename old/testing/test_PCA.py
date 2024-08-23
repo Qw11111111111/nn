@@ -1,5 +1,4 @@
-import numpy as np 
-from pytest import PytestReturnNotNoneWarning
+import numpy as np
 import sklearn.decomposition as dec
 import matplotlib.pyplot as plt
 from utils.maths import PCA

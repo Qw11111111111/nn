@@ -11,7 +11,7 @@ from torch import nn
 torch.set_default_dtype(torch.float64)
 
 parser = argparse.ArgumentParser()  
-parser.add_argument("-l","--learning_rate", action="store", help="set the learning rate", default=5e-12, metavar="lr", type=float)
+parser.add_argument("-l","--learning_rate", action="store", help="set the learning rate", default=5e-14, metavar="lr", type=float)
 parser.add_argument("-a", "--alpha", action="store", help="the alpha paramter for momentum", default=0.9, metavar="alpha", type=float)
 parser.add_argument("-b", "--batch_size", action="store", help="the batch size for SGD", default=50, metavar="B", type=int)
 parser.add_argument("-e", "--epochs", action="store", help="the number of epochs", default=300, metavar="E", type=int)

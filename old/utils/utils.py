@@ -39,3 +39,10 @@ def plot_tree(data: list[int]) -> None:
         tree.create_node(f"{i}_2", f"{i}_2")
 
     pass
+
+def unique_nums(vec: np.ndarray) -> bool:
+    for i, num in enumerate(vec):
+        for num2 in vec[i + 1:]:
+            if num == num2:
+                return False
+    return True

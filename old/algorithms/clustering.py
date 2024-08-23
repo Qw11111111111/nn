@@ -70,6 +70,7 @@ class KMeans(Clusterer):
             self.centroids, self.centroid_assignment, self.best_initial_centroids = best_centroids, best_assignments, best_initial_centroids
         else:
             self._fit(X)
+            self.best_initial_centroids = self.initial_centroids
         self._update_partitions(X)
         return self.centroid_assignment, self.centroids
 
@@ -80,10 +81,8 @@ class KMeans(Clusterer):
             if len(datapoints) == 0:
                 continue
             # calculating the new coordinates via the mean of the associated points
-            #try:
-            self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
-            #except IndexError:
-                #continue
+            #self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
+            self.centroids[i] = np.mean(X[datapoints][:], axis=0)
 
     def _update_partitions(self, X: np.ndarray) -> None:
         # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.

@@ -15,5 +15,5 @@ __all__ =  [
     "neural_net",
     "clustering",
     "utils",
-    "ReLU"
+    "ReLU",
 ]

@@ -11,8 +11,8 @@ from random import randint
 
 
 parser =  argparse.ArgumentParser()
-parser.add_argument("-n", "--n_centers", action="store", type=int, default=2)
-parser.add_argument("-N", "--true_centers", action="store", type=int, default=2)
+parser.add_argument("-n", "--n_centers", action="store", type=int, default=2, help="number of centers given to kmeans and agglomerative clusterers. If set to 0, optimal number of centers will be calculated")
+parser.add_argument("-N", "--true_centers", action="store", type=int, default=2, help="true number of centers. should be > 0")
 parser.add_argument("-r", "--restarts", action="store", type=int, default=1)
 parser.add_argument("-v", "--verbose", action="store_true", default=False)
 parser.add_argument("-e", "--epsilon", action="store", type=float, default=4e-1)

@@ -69,6 +69,13 @@ def center_scale(X: np.ndarray, axis: int = 0, verbose: bool = False) -> np.ndar
         return (X - mean) / std, mean, std
     return (X - mean) / std
 
+def center(X: np.ndarray, axis: int = 0, verbose: bool = False) -> np.ndarray:
+    """returns the centered data, as well as the mean if set to verbose"""
+    mean = np.mean(X, axis = axis)
+    if verbose:
+        return X - mean, mean
+    return X - mean
+
 @timeit
 def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.ndarray:
     # center and scale the data 
@@ -78,7 +85,7 @@ def PCA(X: np.ndarray, n_components: int | None = None, axis: int = 0) -> np.nda
     #S = np.diag(S) should be done after pivot search i think
     if n_components is None:
         # find optimal split https://stackoverflow.com/questions/4471993/compute-the-elbow-for-a-curve-automatically-and-mathematically
-        # i belive that this does not currently work correctly
+        # i believe that this does not currently work correctly
         pivot = np.argmax([S[i + 1] + S[i - 1] - 2 * S[i] for i in range(1, len(S) - 1)])
     else:
         pivot = n_components
@@ -123,7 +130,7 @@ def dot(X, Y):
     return np.dot(X, Y)
 
 @timeit
-def appr_silhouette(self, X: np.ndarray, centroids: np.ndarray, clusters: np.ndarray | list, mean: bool = True) -> float | np.ndarray:
+def appr_silhouette(X: np.ndarray, centroids: np.ndarray, clusters: np.ndarray | list, mean: bool = True) -> float | np.ndarray:
         """Apply the Silhouette method on an unsupervised learning model."""
         silhouette_scores = np.zeros(shape=X.shape[0])
         for i, point in enumerate(X):

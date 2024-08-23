@@ -16,6 +16,13 @@ class SGD(optim):
         self.batch_size = batch_size
     
     def backpropagation(self, X: np.ndarray | float, Y: np.ndarray | float) -> None:
+
+        random_idx = np.random.randint(0, len(Y) - self.batch_size)
+        X, Y = X[random_idx:random_idx + self.batch_size], Y[random_idx:random_idx + self.batch_size]
+        super().backpropagation(X, Y)
+        for layer in self.model.layers:
+            layer.update_state_dict(-layer.weight_grad * self.lr, -layer.bias_grad * self.lr)
+        return
         random_perm = np.random.permutation(len(Y))
         X, Y = X[random_perm], Y[random_perm]
         for i in range(int(len(X) / self.batch_size) - 1):
