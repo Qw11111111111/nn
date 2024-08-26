@@ -1,0 +1,16 @@
+from src.optims import SGD
+from src.models import MLP
+from src.loss import MSELoss
+
+X = []
+Y = []
+
+criterion = MSELoss()
+model = MLP(*args)
+optimizer = SGD(model, *args)
+
+for epoch in range(EPOCHS):
+    pred = model(X)
+    loss = criterion(pred, Y)
+    d_loss = criterion.backward(pred, Y)
+    optimizer.step(model)

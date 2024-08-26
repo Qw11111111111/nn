@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import numpy as np
 from src import maths as m
 from src import utils as u
-from typing import Literal
+from typing import Literal, Any
 
 
 class KMeans(Clusterer):
@@ -83,7 +83,6 @@ class KMeans(Clusterer):
             if len(datapoints) == 0:
                 continue
             # calculating the new coordinates via the mean of the associated points
-            #self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
             self.centroids[i] = np.mean(X[datapoints][:], axis=0)
 
     def _update_partitions(self, X: np.ndarray) -> None:
@@ -98,24 +97,6 @@ class KMeans(Clusterer):
             self._update_partitions(X)
             self._update_centroids(X)
             return
-
-            # assign  all points to the cluster with the smallest distance to its centroid and repeat until no more changes can be made.
-            self.centroid_assignment = [[] for _ in range(self.clusters)]
-            for i, point in enumerate(X):
-                best = np.argmin([l2(point, centroid) for j, centroid in enumerate(self.centroids)])
-                self.centroid_assignment[best].append(i)
-            
-            # update the centroids using the average of all points assigned to it as a new centroid
-            self.last_centroids = self.centroids
-            for i, centroid in enumerate(self.centroids):
-                datapoints = self.centroid_assignment[i]
-                if len(datapoints) == 0:
-                    continue
-                # calculating the new coordinates via the mean of the associated points
-                try:
-                    self.centroids[i] = np.hstack([np.mean(X[datapoints][:,coord], axis=0) for coord in range(X.shape[1])])
-                except IndexError:
-                    continue
     
     def _fit(self, X: np.ndarray, get_score: bool = False) -> float | None:
         # initialize centroids randomly
@@ -185,8 +166,12 @@ class KMeans(Clusterer):
             assignment = u.argwhere(self.centroid_assignment, i, axis=1)[0]
             a = m.l2(point, self.centroids[assignment])
             b = np.min([m.l2(point, centroid) if j != assignment else np.inf for j, centroid in enumerate(self.centroids)])
-            try:
-                silhouette_scores[i] = ((b - a) / (np.amax([a, b]))) if np.amax([a, b]) != 0 else 1 if np.amax([a, b]) != np.inf else 0 if np.amax([a, b]) != np.nan else 0.5 #this still raises and shows a runtime warning. Need to fix
-            except RuntimeWarning:
-                silhouette_scores[i] = 1 if np.amax([a, b]) == 0 else 0
+            #print(np.amax([a, b]))
+            if np.abs(np.amax([a, b])) == np.inf:
+                silhouette_scores[i] = 0
+            else:
+                silhouette_scores[i] = ((b - a) / np.amax([a, b]))
         return np.mean(silhouette_scores) if mean else silhouette_scores
+    
+    def set_params(self, *args: Any, **kwargs: Any) -> None:
+        return super().set_params(*args, **kwargs)

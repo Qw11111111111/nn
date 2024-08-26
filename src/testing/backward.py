@@ -127,7 +127,7 @@ for i in range(200):
     continue
 
 
-model2.fit(optim = None, criterion=criterion, X=X, Y=Y)
+#model2.fit(optim = None, criterion=criterion, X=X, Y=Y)
 
 plt.plot(jnp.arange(i + 1), errors)
 plt.show()

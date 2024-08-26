@@ -2,9 +2,7 @@ import jax.numpy as jnp
 import jax
 import numpy as np
 from typing import Any
-from src.parents.module import Module
-from src.parents.loss import Loss
-from src.parents.optim import Optim
+from src.parents import Module, Loss, Optim
 from src import LinearLayer
 
 class LinearRegression(Module):
@@ -15,11 +13,12 @@ class LinearRegression(Module):
         self.solver = "SGD"
         self.beta = 1e-1
         self.eta = 1e-2
+        self.initialize()
 
     def __call__(self, X: jnp.ndarray, *args: Any, **kwds: Any) -> jnp.ndarray:
         return self.layer(X)
     
-    def fit(self, optim: Optim, criterion: Loss, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> None:
+    """def fit(self, optim: Optim, criterion: Loss, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> None:
         batch_size = max(int(X.shape[0] / 20), 5)
         last_update = 0
         last_err = 0
@@ -43,7 +42,7 @@ class LinearRegression(Module):
                     break
                 err_bigger = True
             last_err = err
-            last_update = update
+            last_update = update"""
 
     def initialize(self) -> None:
         self.layer.initialize()

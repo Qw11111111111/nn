@@ -3,6 +3,7 @@ import numpy as np
 import jax.numpy as jnp
 from src.maths import l2, center_scale, mean_of_cluster
 from src.utils import timeit
+from typing import Any
 
 class AgglomerativeClusterer(Clusterer):
 
@@ -82,3 +83,6 @@ class AgglomerativeClusterer(Clusterer):
                 self.clusters_at_depth[-1].update([i])
                 prox_matrix[col][i], prox_matrix[i][col] = np.inf, np.inf
                 self._get_numbers(prox_matrix.T, i, col, depth)
+
+    def set_params(self, *args: Any, **kwargs: Any) -> None:
+        return super().set_params(*args, **kwargs)

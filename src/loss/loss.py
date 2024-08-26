@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import jax
 from typing import Any
-from src.parents.loss import Loss
+from src.parents import Loss
 
 class MSELoss(Loss):
     

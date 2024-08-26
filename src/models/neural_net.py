@@ -18,14 +18,12 @@ class MLP(Module):
             ReLU(),
             LinearLayer((2, shape[1]), False)
         ]
+        self.initialize()
 
     def __call__(self, X: jnp.ndarray):
         for layer in self.layers:
             X = layer(X)
         return X
-
-    def fit(self, optim: Optim, criterion: Loss, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> None:
-        return super().fit(optim, criterion, X, Y, *args, **kwargs)
     
     def __str__(self) -> str:
         return super().__str__()

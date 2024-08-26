@@ -2,6 +2,7 @@ from src.parents import Clusterer
 import numpy as np
 from src.utils import timeit
 from src.maths import l2
+from typing import Any
 
 class DBScan(Clusterer):
     #https://de.wikipedia.org/wiki/DBSCAN
@@ -63,3 +64,6 @@ class DBScan(Clusterer):
         neighbours = distances <= self.epsilon
         indices = np.arange(len(distances))[neighbours]
         return list(indices)
+    
+    def set_params(self, *args: Any, **kwargs: Any) -> None:
+        return super().set_params(*args, **kwargs)
