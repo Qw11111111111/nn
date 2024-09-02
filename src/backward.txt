@@ -1,0 +1,38 @@
+
+IN: shape (n, m)
+OUT: shape (n, k)
+
+in_layer: shape (m, m_at_1)
+layer_w : shape (m_at_l_-1, m_at_l) 
+out_layer: shape (m_at_l_-1, k)
+
+bias shape (1, m_at_l)
+
+F = X dot W + B
+
+
+d_l_n/d_w_n = IN; shape (n, m_at_l_-1)
+
+d_prev/d_l_n = ; shape (m_at_l, n)
+
+--> (d_prev/d_l_n dot d_l_n/d_w_n).T shape = w_n shape
+
+d_l_n/d_b_n = 1
+d_prev/d_l_n = ; shape (m_at_l, n)
+
+--> (d_prev/d_l_n).T, summed along 0 == (1, m_at_l) == b_n shape
+
+OUTLAYER: 
+
+    d_err/d_out = (k, n)
+
+    d_err/d_w = d_err/d_out * d_out/d_w
+    d_err/d_b = d_err/d_out * d_out/d_b
+
+    d_err/d_prev = d_err/d_out * d_out/d_prev
+
+    repeat for each layer
+
+INLAYER:
+
+    d_err/d_prev not needed

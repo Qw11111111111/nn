@@ -8,15 +8,13 @@ from src import LinearLayer
 class LinearRegression(Module):
 
     def __init__(self, shape: tuple[int], bias: bool, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.layer = LinearLayer(shape, bias)
-        self.solver = "SGD"
+        self.layers = [LinearLayer(shape, bias)]
         self.beta = 1e-1
         self.eta = 1e-2
-        self.initialize()
+        super().__init__(*args, **kwargs)
 
-    def __call__(self, X: jnp.ndarray, *args: Any, **kwds: Any) -> jnp.ndarray:
-        return self.layer(X)
+    def __call__(self, X: jnp.ndarray, *args: Any, **kwargs: Any) -> jnp.ndarray:
+        return self.layers[0](X)
     
     """def fit(self, optim: Optim, criterion: Loss, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> None:
         batch_size = max(int(X.shape[0] / 20), 5)
@@ -43,9 +41,6 @@ class LinearRegression(Module):
                 err_bigger = True
             last_err = err
             last_update = update"""
-
-    def initialize(self) -> None:
-        self.layer.initialize()
     
     def __str__(self) -> str:
         return super().__str__()
@@ -54,5 +49,5 @@ class LinearRegression(Module):
         return super().get_state()
     
     def apply_state(self, state: dict) -> None:
-        return super().apply_state(state)
+        super().apply_state(state)
     

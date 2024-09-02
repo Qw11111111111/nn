@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 from  jax import grad, jacobian
-from loss.loss import MSELoss
-from layers.layers import LinearLayer
-from models.linear import LinearRegression
+from src.loss import MSELoss
+from src.layers import LinearLayer
+from src.models import LinearRegression
 import numpy as np
 import matplotlib.pyplot as plt
 

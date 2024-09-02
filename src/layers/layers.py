@@ -9,16 +9,15 @@ from src.parents import Layer
 class LinearLayer(Layer):
 
     def __init__(self, shape: tuple[int, int], bias: bool = True, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
         self.fit_bias = bias
         self.shape = shape
-        self.initialize()
+        super().__init__(*args, **kwargs)
 
     def __call__(self, X: jnp.ndarray, *args: Any, **kwargs: Any) -> jnp.ndarray:
         return jnp.dot(X, self.weights) #+ (self.bias if self.fit_bias else 0)
     
     def __str__(self) -> str:
-        return super().__str__()
+        return super().__str__() + ' ' + str(self.shape)
     
     def backward(self, X: jnp.ndarray) -> jnp.ndarray:
         return jax.jacobian(self)(X)
@@ -34,9 +33,6 @@ class ReLU(Layer):
 
     def __call__(self, X: jnp.ndarray, *args: Any, **kwds: Any) -> Any:
         return X
-    
-    def __str__(self) -> str:
-        return super().__str__()
     
     def backward(self, X: ndarray) -> ndarray:
         return X

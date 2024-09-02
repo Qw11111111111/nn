@@ -11,5 +11,5 @@ class MSELoss(Loss):
     def backward(self, X: jnp.ndarray, Y: jnp.ndarray) -> jnp.ndarray:
         return jax.grad(self)(X, Y)
     
-    def __call__(self, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwds: Any) -> jnp.ndarray:
+    def __call__(self, X: jnp.ndarray, Y: jnp.ndarray, *args: Any, **kwargs: Any) -> jnp.ndarray:
         return 1 / (1 * X.shape[0]) * jnp.sum(jnp.square(Y - X))
